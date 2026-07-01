@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { BoardsSection } from '../components/BoardsSection'
 import { CategoryFilter } from '../components/CategoryFilter'
 import { Footer } from '../components/Footer'
@@ -23,6 +24,7 @@ function filterBoards(boards, category, query) {
 }
 
 export function HomePage() {
+  const navigate = useNavigate()
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [boards, setBoards] = useState(realBoards)
@@ -34,7 +36,7 @@ export function HomePage() {
   }
 
   const handleViewBoard = (id) => {
-    console.log('view board', id)
+    navigate(`/boards/${id}`)
   }
 
   return (
