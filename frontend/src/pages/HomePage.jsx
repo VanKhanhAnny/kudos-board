@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { AddButton } from '../components/AddButton'
 import { BoardsSection } from '../components/BoardsSection'
 import { CategoryFilter } from '../components/CategoryFilter'
 import { Footer } from '../components/Footer'
@@ -53,6 +54,11 @@ export function HomePage() {
         <CategoryFilter
           selectedCategory={selectedCategory}
           onSelectCategory={setSelectedCategory}
+        />
+        <AddButton
+          label="add a new board"
+          tone="dark"
+          onClick={() => console.log('open create-board modal')}
         />
       </div>
       <BoardsSection

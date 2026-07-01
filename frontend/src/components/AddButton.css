@@ -1,0 +1,54 @@
+.add-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  transition: all 200ms ease;
+}
+
+.add-button__plus {
+  font-size: 18px;
+  line-height: 1;
+  font-weight: 400;
+}
+
+.add-button--dark {
+  background: #1a1a1a;
+  color: #ffffff !important;
+  border-color: #1a1a1a;
+}
+
+.add-button--dark .add-button__plus,
+.add-button--dark .add-button__label {
+  color: #ffffff !important;
+}
+
+.add-button--dark:hover {
+  background: #000000;
+  transform: translateY(-1px);
+}
+
+.add-button--light {
+  background: rgba(255, 255, 255, 0.9);
+  color: #1a1a1a !important;
+  border-color: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.add-button--light .add-button__plus,
+.add-button--light .add-button__label {
+  color: #1a1a1a !important;
+}
+
+.add-button--light:hover {
+  background: #ffffff;
+  transform: translateY(-1px);
+}

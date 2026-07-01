@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import { AddButton } from '../components/AddButton'
 import { CardGrid } from '../components/CardGrid'
 import { Footer } from '../components/Footer'
 import { Header } from '../components/Header'
@@ -49,6 +50,13 @@ export function BoardPage() {
         <p className="board-page__category">
           {CATEGORY_LABEL[board.category] ?? board.category}
         </p>
+        <div className="board-page__cta">
+          <AddButton
+            label="add a new card"
+            tone="light"
+            onClick={() => console.log('open create-card modal')}
+          />
+        </div>
       </section>
       <section className="board-page__cards">
         <CardGrid
