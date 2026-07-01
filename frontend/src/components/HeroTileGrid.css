@@ -1,4 +1,4 @@
-.board-grid {
+.hero-tile-grid {
   display: grid;
   grid-template-columns: repeat(30, 1fr);
   grid-template-rows: repeat(18, 1fr);

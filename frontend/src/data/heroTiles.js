@@ -1,7 +1,6 @@
 import { heroImages } from './heroImages'
 
-export const mockBoards = Array.from({ length: 540 }, (_, i) => ({
-  id: `mock-${i}`,
-  title: `Board ${i + 1}`,
+export const heroTiles = Array.from({ length: 540 }, (_, i) => ({
+  id: `tile-${i}`,
   imageUrl: heroImages[Math.floor(Math.random() * heroImages.length)],
 }))

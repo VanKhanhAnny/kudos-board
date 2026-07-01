@@ -1,12 +1,12 @@
 import { useState } from 'react'
-import { BoardGrid } from '../components/BoardGrid'
 import { BoardsSection } from '../components/BoardsSection'
 import { CategoryFilter } from '../components/CategoryFilter'
 import { Header } from '../components/Header'
 import { HeroText } from '../components/HeroText'
+import { HeroTileGrid } from '../components/HeroTileGrid'
 import { ScrollQuote } from '../components/ScrollQuote'
 import { SearchBar } from '../components/SearchBar'
-import { mockBoards } from '../data/mockBoards'
+import { heroTiles } from '../data/heroTiles'
 import { realBoards } from '../data/realBoards'
 import './HomePage.css'
 
@@ -24,14 +24,23 @@ function filterBoards(boards, category, query) {
 export function HomePage() {
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
+  const [boards, setBoards] = useState(realBoards)
 
-  const visibleBoards = filterBoards(realBoards, selectedCategory, searchQuery)
+  const visibleBoards = filterBoards(boards, selectedCategory, searchQuery)
+
+  const handleDeleteBoard = (id) => {
+    setBoards((prev) => prev.filter((b) => b.id !== id))
+  }
+
+  const handleViewBoard = (id) => {
+    console.log('view board', id)
+  }
 
   return (
     <main className="home-page">
       <Header />
       <section className="home-page__hero">
-        <BoardGrid boards={mockBoards} />
+        <HeroTileGrid tiles={heroTiles} />
         <div className="home-page__overlay" />
         <HeroText />
       </section>
@@ -43,7 +52,11 @@ export function HomePage() {
           onSelectCategory={setSelectedCategory}
         />
       </div>
-      <BoardsSection boards={visibleBoards} />
+      <BoardsSection
+        boards={visibleBoards}
+        onView={handleViewBoard}
+        onDelete={handleDeleteBoard}
+      />
     </main>
   )
 }

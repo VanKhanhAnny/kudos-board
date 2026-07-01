@@ -1,34 +1,56 @@
-import { useMemo } from 'react'
 import './BoardCard.css'
 
-const ANIMATION_PROBABILITY = 0.2
+const CATEGORY_LABEL = {
+  CELEBRATION: 'Celebration',
+  THANK_YOU: 'Thank you',
+  INSPIRATION: 'Inspiration',
+}
 
-export function BoardCard({ board }) {
-  const { animates, delay, duration } = useMemo(() => {
-    return {
-      animates: Math.random() < ANIMATION_PROBABILITY,
-      delay: Math.random() * 3000,
-      duration: 1500 + Math.random() * 2500,
+export function BoardCard({ board, onView, onDelete }) {
+  const handleDelete = (e) => {
+    e.stopPropagation()
+    if (window.confirm(`Delete "${board.title}"?`)) {
+      onDelete?.(board.id)
     }
-  }, [])
+  }
+
+  const handleView = (e) => {
+    e.stopPropagation()
+    onView?.(board.id)
+  }
 
   return (
-    <div
-      className={`board-card ${animates ? 'is-animating' : ''}`}
-      style={
-        animates
-          ? {
-              animationDelay: `${delay}ms`,
-              animationDuration: `${duration}ms`,
-            }
-          : undefined
-      }
-    >
-      {board.imageUrl ? (
-        <img src={board.imageUrl} alt={board.title} />
-      ) : (
-        <div className="board-card__placeholder" aria-hidden="true" />
-      )}
-    </div>
+    <article className="board-card">
+      <div className="board-card__image-wrap">
+        <img
+          className="board-card__image"
+          src={board.imageUrl}
+          alt={board.title}
+        />
+        <div className="board-card__actions">
+          <button
+            type="button"
+            className="board-card__btn board-card__btn--view"
+            onClick={handleView}
+          >
+            view
+          </button>
+          <button
+            type="button"
+            className="board-card__btn board-card__btn--delete"
+            onClick={handleDelete}
+            aria-label={`Delete ${board.title}`}
+          >
+            delete
+          </button>
+        </div>
+      </div>
+      <div className="board-card__meta">
+        <span className="board-card__category">
+          {CATEGORY_LABEL[board.category] ?? board.category}
+        </span>
+        <h3 className="board-card__title">{board.title}</h3>
+      </div>
+    </article>
   )
 }

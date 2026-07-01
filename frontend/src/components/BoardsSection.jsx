@@ -1,7 +1,7 @@
-import { RealBoardCard } from './RealBoardCard'
+import { BoardCard } from './BoardCard'
 import './BoardsSection.css'
 
-export function BoardsSection({ boards }) {
+export function BoardsSection({ boards, onView, onDelete }) {
   return (
     <section className="boards-section">
       <div className="boards-section__inner">
@@ -10,7 +10,12 @@ export function BoardsSection({ boards }) {
         ) : (
           <div className="boards-section__grid">
             {boards.map((board) => (
-              <RealBoardCard key={board.id} board={board} />
+              <BoardCard
+                key={board.id}
+                board={board}
+                onView={onView}
+                onDelete={onDelete}
+              />
             ))}
           </div>
         )}
