@@ -1,0 +1,44 @@
+.boards-section {
+  position: relative;
+  width: 100%;
+  padding: 120px 0 160px;
+  background: #d4d4d4;
+  z-index: 2;
+}
+
+.boards-section__inner {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 0 64px;
+  box-sizing: border-box;
+}
+
+.boards-section__empty {
+  text-align: center;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+  font-size: 18px;
+  font-weight: 300;
+  color: rgba(26, 26, 26, 0.5);
+  padding: 80px 0;
+}
+
+.boards-section__grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 44px 32px;
+}
+
+@media (max-width: 1100px) {
+  .boards-section__grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 780px) {
+  .boards-section__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .boards-section__inner {
+    padding: 0 24px;
+  }
+}
