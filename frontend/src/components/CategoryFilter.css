@@ -1,0 +1,32 @@
+.category-filter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 48px 24px 0;
+}
+
+.category-filter__tab {
+  background: none;
+  border: 1px solid rgba(26, 26, 26, 0.2);
+  border-radius: 999px;
+  padding: 10px 22px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  color: rgba(26, 26, 26, 0.7);
+  cursor: pointer;
+  transition: all 200ms ease;
+}
+
+.category-filter__tab:hover {
+  color: #1a1a1a;
+  border-color: rgba(26, 26, 26, 0.5);
+}
+
+.category-filter__tab.is-active {
+  background: #1a1a1a;
+  color: #ffffff;
+  border-color: #1a1a1a;
+}
