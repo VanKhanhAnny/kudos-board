@@ -502,8 +502,8 @@ This section assigns concrete ownership for every artifact in the project. Secti
 ### Roles
 
 - **Anny** — Frontend Lead (Milestone 1). Currently in Figma design phase; will translate to code once mockups are settled.
-- **Eric** (me) — Backend Lead (Milestone 2). Owns project scaffolding, schema, and the majority of routes.
-- **Enes** — Backend Support (Milestone 2). Picks up the remaining card-mutation endpoints after Eric hands off.
+- **Eric** (me) — Backend co-owner (foundation + boards routes) (Milestone 2). Owns project scaffolding, schema, shared middleware, and the four board endpoints.
+- **Enes** — Backend co-owner (cards routes) (Milestone 2). Owns all four card endpoints, working in parallel with Eric once foundation is merged.
 - **Milestone 3 (integration)** — Anny + Eric drive; Enes assists if needed.
 
 ### Frontend ownership — Anny
@@ -533,9 +533,9 @@ Anny owns the entire frontend deliverable. From Sections 1 and 4, that includes:
 - Vite's default dev port is `5173`. The backend's CORS middleware allows that origin via the `FRONTEND_ORIGIN` env var; if Anny ever runs Vite on a non-default port, update both `.env` files.
 - Anny's `mockBoards` currently has shape `{ id, title, imageUrl }` — this is a strict subset of what `GET /api/boards` returns. She'll need `category` (for the nav tabs to filter) and `createdAt` (for the Recent tab) when she wires the real endpoint.
 
-### Backend ownership — Eric (~75%)
+### Backend ownership — Eric (~50%)
 
-Eric owns the foundation everyone else builds on, plus the 6 non-mutation endpoints.
+Eric owns the foundation everyone else builds on, plus the 4 board endpoints.
 
 **Foundation (shared infrastructure, must land before Enes can start):**
 - `cd backend && npm init -y`
@@ -544,10 +544,10 @@ Eric owns the foundation everyone else builds on, plus the 6 non-mutation endpoi
 - Implement `schema.prisma` from the Section 3 spec verbatim
 - First migration: `npx prisma migrate dev --name init`
 - `backend/src/index.js` — Express bootstrap, JSON body parser, CORS middleware reading `FRONTEND_ORIGIN` from env
-- Shared middleware: centralized error handler, request-body validation helpers (Enes will reuse these on his two PATCH routes)
+- Shared middleware: centralized error handler, request-body validation helpers (Enes reuses these on his card routes)
 - `backend/.env.example` documenting `DATABASE_URL`, `FRONTEND_ORIGIN`, `PORT`
 
-**Endpoints (6 of 8):**
+**Endpoints (4 of 8) — all in `backend/src/routes/boards.js`:**
 
 | Method | Path                                | Notes                                          |
 |--------|-------------------------------------|------------------------------------------------|
@@ -555,23 +555,25 @@ Eric owns the foundation everyone else builds on, plus the 6 non-mutation endpoi
 | POST   | `/api/boards`                       | Validates `title` + `category` required        |
 | GET    | `/api/boards/:id`                   | Uses Prisma `include: { cards: true }`         |
 | DELETE | `/api/boards/:id`                   | Cascade via FK `onDelete: Cascade`             |
-| POST   | `/api/boards/:boardId/cards`        | 404 if parent board missing                    |
-| DELETE | `/api/cards/:id`                    | —                                              |
 
-**Testing:** Postman/Insomnia collection covering all 6 endpoints with happy-path + 400/404 cases.
+**Testing:** Postman/Insomnia collection covering all 4 board endpoints with happy-path + 400/404 cases.
 
-### Backend ownership — Enes (~25%)
+### Backend ownership — Enes (~50%)
 
-Enes inherits a working Express app with schema, middleware, and 6 endpoints already merged on `main`. His scope is intentionally small and isolated.
+Enes inherits a working Express app with schema and middleware already merged on `main`, and owns every route that operates on cards. He works in parallel with Eric — no dependency on Eric's board endpoints landing first.
 
-**Endpoints (2 of 8):**
+**Endpoints (4 of 8) — all in `backend/src/routes/cards.js`:**
 
 | Method | Path                              | Implementation hint                                                                 |
 |--------|-----------------------------------|-------------------------------------------------------------------------------------|
+| POST   | `/api/boards/:boardId/cards`      | Validates `message` + `gifUrl` required; 404 if parent board missing                |
+| DELETE | `/api/cards/:id`                  | 404 if card missing                                                                 |
 | PATCH  | `/api/cards/:id/upvote`           | `prisma.card.update({ data: { upvotes: { increment: 1 } } })`                       |
 | PATCH  | `/api/cards/:id/pin`              | Fetch card, toggle `isPinned`, set `pinnedAt = new Date()` on pin / `null` on unpin |
 
-**Testing:** Postman/Insomnia tests for both routes (happy path + 404).
+**Router structure:** `cards.js` exports an `express.Router({ mergeParams: true })`. `index.js` mounts it twice: at `/api/boards/:boardId/cards` (so `POST /` inside the router resolves to the create-card contract and `req.params.boardId` is populated) and at `/api/cards` (for the DELETE + two PATCH routes). Inside the router, use `:id` for the card id and rely on the mount path to distinguish.
+
+**Testing:** Postman/Insomnia collection covering all 4 card endpoints with happy-path + 400/404 cases.
 
 **Deliverables in planning.md:**
 - Writes the `Spec Reconciliation — Backend (Milestone 2)` section once backend is fully merged (template lives in `guide.md`).
@@ -584,20 +586,31 @@ To avoid merge conflicts, the following files have one designated writer:
 |--------------------------------------------|--------------|-------------------------------------------------------------|
 | `backend/prisma/schema.prisma`             | Eric         | Migration history must be linear; one person runs migrations|
 | `backend/prisma/migrations/`               | Eric         | Same reason                                                 |
+| `backend/src/routes/boards.js`             | Eric         | Board endpoints are all his; keeps that file conflict-free  |
+| `backend/src/routes/cards.js`              | Enes         | Card endpoints are all his; keeps that file conflict-free   |
 | `frontend/package.json` + lockfile         | Anny         | Frontend dependency tree is hers                            |
 | `backend/package.json` + lockfile          | Eric         | Backend dependency tree is his                              |
 | `planning.md` Section 3 (Database Schema)  | Eric         | Schema is the source of truth                               |
+
+Both router files are mounted from `backend/src/index.js`. That file is multi-writer, but router mounts are add-only lines — each dev appends their `app.use(...)` next to the existing mounts rather than reordering, which keeps merges trivial.
 
 If Anny or Enes needs a schema change (new field, type change), they open a PR that updates the Section 3 spec and tags Eric; Eric applies the migration in a follow-up.
 
 ### Handoff signal — when Enes can start
 
-Concrete green-light: Enes pulls `main` and starts his two PATCH routes **after** all of the following are merged:
-1. `backend/prisma/schema.prisma` matches Section 3 and the init migration is applied.
-2. `backend/src/index.js` boots cleanly with CORS, JSON parsing, and the error-handler middleware.
-3. Eric's 6 endpoints are merged and pass Postman tests.
+Even though Eric and Enes work in parallel after this point, Enes waits for Eric to land a small "shape-setting" slice first, so both routers converge on the same conventions (validation style, response bodies, error handling, file layout) instead of diverging.
 
-Until then, Enes is unblocked to: review the spec, set up Postman, write fixture data, or pair-review Eric's PRs.
+Concrete green-light: Enes pulls `main` and starts `backend/src/routes/cards.js` **after** all of the following are merged:
+1. `backend/prisma/schema.prisma` matches Section 3 and the init migration is applied. *(merged Jun 30)*
+2. `backend/src/index.js` boots cleanly with CORS, JSON parsing, and the error-handler middleware. *(merged Jun 30)*
+3. Eric has landed three shape-setting routes in `backend/src/routes/boards.js`, each with passing Postman tests:
+   - `POST /api/boards` — establishes the validation-via-`requireFields` + defaults + 201-with-full-body pattern that Enes reuses for `POST /api/boards/:boardId/cards`.
+   - `GET /api/boards/:id` — establishes the fetch-then-404 pattern that Enes reuses in his two PATCH routes (both need to 404 on missing card before mutating).
+   - `DELETE /api/boards/:id` — establishes the delete + 204 No Content pattern (P2025 caught by centralized error handler) that Enes reuses for `DELETE /api/cards/:id`.
+
+Eric's remaining route (`GET /api/boards`) does not gate the handoff and can land after Enes starts.
+
+Until the green-light, Enes is unblocked to: review the spec, set up Postman, write fixture data, or pair-review Eric's PRs.
 
 ### Collaboration rules
 
@@ -626,12 +639,13 @@ A lightweight checklist that gets ticked off as work progresses (any teammate ca
 - [ ] Components implemented per Section 1
 - [ ] `Decisions Log — Frontend (Milestone 1)` written
 
-**Milestone 2 — Backend (Eric, then Enes)**
-- [ ] (Eric) Backend scaffold: npm, Prisma, Express, middleware
-- [ ] (Eric) `schema.prisma` + init migration
-- [ ] (Eric) 6 endpoints + Postman tests
-- [ ] (Eric) Handoff signal: all of above on `main`
-- [ ] (Enes) PATCH upvote + PATCH pin + Postman tests
+**Milestone 2 — Backend (Eric + Enes in parallel after shape-setting handoff)**
+- [x] (Eric) Backend scaffold: npm, Prisma, Express, middleware
+- [x] (Eric) `schema.prisma` + init migration
+- [ ] (Eric) Shape-setting routes: `POST /api/boards`, `GET /api/boards/:id`, `DELETE /api/boards/:id` + Postman tests
+- [ ] (Eric) Handoff signal fires → Enes starts `routes/cards.js`
+- [ ] (Eric) Remaining route: `GET /api/boards` + Postman tests
+- [ ] (Enes) 4 card endpoints + Postman tests
 - [ ] (Enes) `Spec Reconciliation — Backend (Milestone 2)` written
 
 **Milestone 3 — Integration (Anny + Eric)**
