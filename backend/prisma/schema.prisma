@@ -1,0 +1,46 @@
+// Prisma schema for Kudos Board.
+// Source of truth: planning.md Section 3. Update both together (maintenance rule).
+
+// Using the legacy `prisma-client-js` generator because Prisma 7's new
+// `prisma-client` generator emits TypeScript source, which requires
+// `--experimental-strip-types` on every node invocation in a JS project.
+// `prisma-client-js` emits compiled JS into node_modules/.prisma/client
+// and is consumed via `import { PrismaClient } from "@prisma/client"`.
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Connection URL lives in prisma.config.ts (Prisma 7 moved it out of the
+// schema file). See `datasource.url` there.
+datasource db {
+  provider = "postgresql"
+}
+
+enum Category {
+  CELEBRATION
+  THANK_YOU
+  INSPIRATION
+}
+
+model Board {
+  id        String   @id @default(cuid())
+  title     String
+  category  Category
+  author    String?
+  imageUrl  String?
+  createdAt DateTime @default(now())
+  cards     Card[]
+}
+
+model Card {
+  id        String    @id @default(cuid())
+  message   String
+  gifUrl    String
+  author    String?
+  upvotes   Int       @default(0)
+  isPinned  Boolean   @default(false)
+  pinnedAt  DateTime?
+  createdAt DateTime  @default(now())
+  boardId   String
+  board     Board     @relation(fields: [boardId], references: [id], onDelete: Cascade)
+}

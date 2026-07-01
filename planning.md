@@ -202,7 +202,7 @@ App
   - `gifResults: GiphyResult[]`
   - `isLoading: boolean`
 - **Interactions:**
-  - User types and submits → fetch GIPHY search API (call goes through the backend proxy to keep the API key secret).
+  - User types and submits → fetch GIPHY search API directly from the browser at `https://api.giphy.com/v1/gifs/search`, using `VITE_GIPHY_API_KEY` from `frontend/.env`. No backend proxy.
   - Click on a result → `onSelectGif(url)`.
 
 ---
@@ -227,11 +227,12 @@ List boards, with optional filtering and search.
       "title": "string",
       "category": "CELEBRATION",
       "author": "string | null",
-      "imageUrl": "string | null",
+      "imageUrl": "string",
       "createdAt": "2026-06-26T19:00:00.000Z"
     }
   ]
   ```
+  Note: `imageUrl` is **always non-null** in responses — the server assigns a category-default URL on create if the client doesn't provide one. See Section 3 `Board.imageUrl` notes.
 - **Errors:**
   - `400 Bad Request` — invalid `category` or `filter` value. Body: `{ "error": "Invalid query parameter: ..." }`
   - `500 Internal Server Error` — database failure.
@@ -255,10 +256,11 @@ Create a new board.
     "title": "...",
     "category": "...",
     "author": "... | null",
-    "imageUrl": null,
+    "imageUrl": "string (server-assigned if not in request body)",
     "createdAt": "..."
   }
   ```
+  Note: `imageUrl` is optional in the request body. If the client omits it, the server picks one from a category-default pool and returns it. The response always has a non-null `imageUrl`.
 - **Errors:**
   - `400 Bad Request` — missing/invalid `title` or `category`. Body: `{ "error": "title is required" }` (or similar).
   - `500 Internal Server Error`.
@@ -274,7 +276,7 @@ Get a single board with its cards (used by Board Page).
     "title": "...",
     "category": "...",
     "author": "... | null",
-    "imageUrl": "... | null",
+    "imageUrl": "string",
     "createdAt": "...",
     "cards": [
       {
@@ -368,7 +370,7 @@ Toggle a card's pinned state. If pinning, sets `isPinned = true` and `pinnedAt =
 
 - All 4xx/5xx responses use a uniform shape: `{ "error": "human-readable message" }`.
 - CORS allows the frontend origin (configured via `FRONTEND_ORIGIN` env var).
-- A GIPHY proxy endpoint may be added later (e.g., `GET /api/giphy/search?q=...`) so the API key isn't exposed in the frontend — not in this spec's required list, but called out as a likely addition.
+- GIPHY is called **directly from the frontend**; the backend exposes no GIPHY endpoint. The free-tier GIPHY developer key is intended for client-side use, so the frontend reads it from `VITE_GIPHY_API_KEY` and calls `https://api.giphy.com/v1/gifs/search` directly. See Section 1 `GiphySearch` and Section 5 Frontend ownership.
 
 ---
 
@@ -392,7 +394,7 @@ INSPIRATION
 | `title`     | String     | yes      | —       | 1–100 chars (validated in API layer).         |
 | `category`  | `Category` | yes      | —       | Enum above.                                   |
 | `author`    | String?    | no       | `null`  | Optional creator display name.                |
-| `imageUrl`  | String?    | no       | `null`  | Optional cover image; UI falls back per category. |
+| `imageUrl`  | String?    | no       | `null`  | Optional in DB for forward-compatibility, but the `POST /api/boards` handler **always assigns a category-default URL if the client doesn't provide one**, so API responses always include a non-null `imageUrl`. Default URL pool lives in `backend/src/lib/boardImages.js` (added in Phase 4). |
 | `createdAt` | DateTime   | yes      | `now()` | Used for "Recent" filter and grid ordering.   |
 | `cards`     | `Card[]`   | —        | —       | Relation: one Board has many Cards.           |
 
@@ -517,13 +519,19 @@ Anny owns the entire frontend deliverable. From Sections 1 and 4, that includes:
 - Vite project init in `frontend/` (`npm create vite@latest`)
 - React Router setup (`BrowserRouter`, route config for `/` and `/boards/:boardId`)
 - Styling solution of her choice (CSS modules, Tailwind, etc.)
-- GIPHY API integration in `GiphySearch` (the spec leaves room for either a direct browser call or a backend proxy — Anny picks based on whether she's OK exposing the API key)
+- GIPHY API integration in `GiphySearch` — direct browser call to `https://api.giphy.com/v1/gifs/search` using `VITE_GIPHY_API_KEY` from `frontend/.env`. Anny registers for a free GIPHY developer key at developers.giphy.com.
 
 **State (per Section 4):**
 - Everything: page-level state (`HomePage`, `BoardPage`), modal state (`CreateBoardModal`, `CreateCardModal`), `SearchBar.inputValue`, `GiphySearch` state, `ThemeProvider` Context
 
 **Deliverables in planning.md:**
 - Writes the `Decisions Log — Frontend (Milestone 1)` section once frontend is done (template lives in `guide.md`).
+
+**Coordination notes (from Anny's frontend summary, Jun 30):**
+- Backend will run on `http://localhost:3000`. When wiring up real fetch calls in Milestone 3, Anny should set `VITE_API_BASE_URL=http://localhost:3000` in `frontend/.env` and read it via `import.meta.env.VITE_API_BASE_URL`.
+- Anny's current `Header` component shows **log in / register buttons that aren't wired**. User Accounts is out of scope for this version of the spec; the backend will not provide `/api/auth/*` endpoints. Anny should hide or stub those buttons before submission (or move them into a stretch-feature spec update if the team takes on auth later).
+- Vite's default dev port is `5173`. The backend's CORS middleware allows that origin via the `FRONTEND_ORIGIN` env var; if Anny ever runs Vite on a non-default port, update both `.env` files.
+- Anny's `mockBoards` currently has shape `{ id, title, imageUrl }` — this is a strict subset of what `GET /api/boards` returns. She'll need `category` (for the nav tabs to filter) and `createdAt` (for the Recent tab) when she wires the real endpoint.
 
 ### Backend ownership — Eric (~75%)
 
