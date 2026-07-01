@@ -1,15 +1,16 @@
+import { Link } from 'react-router-dom'
 import './Header.css'
 
 export function Header() {
   return (
     <header className="header">
       <div className="header__auth">
-        <button className="header__auth-btn header__auth-btn--ghost" type="button">
+        <Link to="/login" className="header__auth-btn header__auth-btn--ghost">
           log in
-        </button>
-        <button className="header__auth-btn header__auth-btn--solid" type="button">
+        </Link>
+        <Link to="/register" className="header__auth-btn header__auth-btn--solid">
           register
-        </button>
+        </Link>
       </div>
     </header>
   )

@@ -24,6 +24,10 @@
   transition: all 200ms ease;
   border: 1px solid transparent;
   letter-spacing: 0.01em;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .header__auth-btn--ghost {

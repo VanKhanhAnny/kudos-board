@@ -1,0 +1,73 @@
+.auth-layout {
+  position: relative;
+  min-height: 100vh;
+  width: 100%;
+  background: #d4d4d4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 5vw;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.auth-layout__panel {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 620px;
+  padding: 48px 56px 40px;
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 10px 60px rgba(0, 0, 0, 0.08);
+}
+
+.auth-layout__grateful {
+  position: absolute;
+  top: 50%;
+  right: 6vw;
+  transform: translateY(-50%) rotate(90deg);
+  transform-origin: right center;
+  display: flex;
+  align-items: flex-end;
+  gap: 1vw;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.auth-layout__sparkle {
+  width: 5vw;
+  height: 5vw;
+  filter: drop-shadow(0 0 14px rgba(255, 255, 255, 0.95))
+    drop-shadow(0 0 28px rgba(255, 255, 255, 0.7))
+    drop-shadow(0 0 60px rgba(255, 255, 255, 0.5));
+}
+
+.auth-layout__grateful-word {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+  font-weight: 100;
+  font-stretch: condensed;
+  font-size: 16vw;
+  line-height: 0.9;
+  letter-spacing: -0.02em;
+  color: #ffffff !important;
+  text-shadow:
+    0 0 20px rgba(255, 255, 255, 0.6),
+    0 0 60px rgba(255, 255, 255, 0.3);
+  filter: blur(1.5px);
+}
+
+@media (max-width: 720px) {
+  .auth-layout {
+    padding: 40px 20px;
+  }
+  .auth-layout__panel {
+    padding: 36px 28px 30px;
+  }
+  .auth-layout__grateful {
+    display: none;
+  }
+}

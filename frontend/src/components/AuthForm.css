@@ -1,0 +1,91 @@
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.auth-form__intro {
+  text-align: center;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: 30px;
+  color: #ffffff !important;
+  margin: 0 0 -4px;
+  letter-spacing: 0.01em;
+}
+
+.auth-form__title {
+  text-align: center;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+  font-weight: 700;
+  font-stretch: condensed;
+  font-size: clamp(72px, 11vw, 140px);
+  line-height: 1;
+  letter-spacing: -0.01em;
+  color: #ffffff !important;
+  margin: 0 0 20px;
+  text-shadow:
+    0 0 18px rgba(255, 255, 255, 0.75),
+    0 0 40px rgba(255, 255, 255, 0.45),
+    0 0 80px rgba(255, 255, 255, 0.25);
+}
+
+.auth-form__divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.5);
+  margin: 12px 0 4px;
+}
+
+.auth-form__submit {
+  width: 100%;
+  padding: 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.35);
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: #1a1a1a !important;
+  cursor: pointer;
+  transition: all 200ms ease;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.auth-form__submit:hover {
+  background: rgba(255, 255, 255, 0.65);
+  border-color: #ffffff;
+}
+
+.auth-form__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.auth-form__footer-text {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+  font-size: 20px;
+  font-weight: 300;
+  color: rgba(255, 255, 255, 0.85) !important;
+  margin: 0;
+}
+
+.auth-form__footer-link {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+  font-size: 20px;
+  font-weight: 400;
+  color: #ffffff !important;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.auth-form__error {
+  text-align: center;
+  font-size: 13px;
+  color: rgba(220, 38, 38, 0.95) !important;
+  margin: 0;
+}
