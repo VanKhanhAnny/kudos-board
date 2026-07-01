@@ -18,7 +18,7 @@ export function LoginPage() {
       return
     }
     // TODO: replace with real POST /auth/login when backend is ready.
-    navigate('/')
+    navigate('/?logged-in=true')
   }
 
   return (

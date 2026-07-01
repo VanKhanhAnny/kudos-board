@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import eyeIcon from '../assets/icons/eye.png'
 import hiddenIcon from '../assets/icons/hidden.png'
 import './IconField.css'
 
@@ -31,7 +32,7 @@ export function IconField({
           onClick={() => setRevealed((prev) => !prev)}
           aria-label={revealed ? 'Hide password' : 'Show password'}
         >
-          <img src={hiddenIcon} alt="" />
+          <img src={revealed ? eyeIcon : hiddenIcon} alt="" />
         </button>
       ) : (
         icon && (
