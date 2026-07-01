@@ -1,0 +1,90 @@
+.giphy-search {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.giphy-search__input-row {
+  display: flex;
+  gap: 8px;
+}
+
+.giphy-search__input {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid rgba(26, 26, 26, 0.2);
+  border-radius: 999px;
+  background: #ffffff;
+  font-family: inherit;
+  font-size: 14px;
+  color: #1a1a1a;
+  outline: none;
+  transition: border-color 200ms ease;
+}
+
+.giphy-search__input:focus {
+  border-color: #1a1a1a;
+}
+
+.giphy-search__submit {
+  padding: 10px 18px;
+  background: #1a1a1a;
+  color: #ffffff !important;
+  border: 1px solid #1a1a1a;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 200ms ease;
+}
+
+.giphy-search__submit:hover {
+  background: #000000;
+}
+
+.giphy-search__status {
+  text-align: center;
+  font-size: 13px;
+  color: rgba(26, 26, 26, 0.5) !important;
+  padding: 20px 0;
+  margin: 0;
+}
+
+.giphy-search__grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.giphy-search__tile {
+  width: 100%;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  padding: 0;
+  cursor: pointer;
+  background: none;
+  transition: border-color 200ms ease;
+}
+
+.giphy-search__tile img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  filter: grayscale(1);
+  transition: filter 200ms ease;
+}
+
+.giphy-search__tile:hover img,
+.giphy-search__tile.is-selected img {
+  filter: grayscale(0);
+}
+
+.giphy-search__tile.is-selected {
+  border-color: #1a1a1a;
+}

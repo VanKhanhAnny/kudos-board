@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { AddButton } from '../components/AddButton'
 import { CardGrid } from '../components/CardGrid'
+import { CreateCardModal } from '../components/CreateCardModal'
 import { Footer } from '../components/Footer'
 import { Header } from '../components/Header'
 import { realBoards } from '../data/realBoards'
@@ -18,6 +19,7 @@ export function BoardPage() {
   const { boardId } = useParams()
   const board = realBoards.find((b) => b.id === boardId)
   const [cards, setCards] = useState(mockCardsByBoard[boardId] ?? [])
+  const [isCreateCardOpen, setIsCreateCardOpen] = useState(false)
 
   useEffect(() => {
     window.scrollTo(0, 0)
@@ -31,6 +33,10 @@ export function BoardPage() {
 
   const handleDelete = (id) => {
     setCards((prev) => prev.filter((c) => c.id !== id))
+  }
+
+  const handleCreateCard = (card) => {
+    setCards((prev) => [card, ...prev])
   }
 
   if (!board) {
@@ -58,7 +64,7 @@ export function BoardPage() {
           <AddButton
             label="add a new card"
             tone="light"
-            onClick={() => console.log('open create-card modal')}
+            onClick={() => setIsCreateCardOpen(true)}
           />
         </div>
       </section>
@@ -70,6 +76,12 @@ export function BoardPage() {
         />
       </section>
       <Footer />
+      <CreateCardModal
+        isOpen={isCreateCardOpen}
+        boardId={boardId}
+        onClose={() => setIsCreateCardOpen(false)}
+        onCreate={handleCreateCard}
+      />
     </main>
   )
 }

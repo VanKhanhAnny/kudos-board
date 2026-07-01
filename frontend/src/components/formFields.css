@@ -1,0 +1,108 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.field__label {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(26, 26, 26, 0.6) !important;
+}
+
+.field__label--optional::after {
+  content: ' (optional)';
+  text-transform: none;
+  letter-spacing: 0.02em;
+  font-weight: 300;
+  color: rgba(26, 26, 26, 0.4) !important;
+}
+
+.field__input,
+.field__textarea,
+.field__select {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px 14px;
+  border: 1px solid rgba(26, 26, 26, 0.2);
+  border-radius: 10px;
+  background: #ffffff;
+  font-family: inherit;
+  font-size: 15px;
+  color: #1a1a1a;
+  outline: none;
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+}
+
+.field__textarea {
+  resize: vertical;
+  min-height: 90px;
+  line-height: 1.4;
+}
+
+.field__input:focus,
+.field__textarea:focus,
+.field__select:focus {
+  border-color: #1a1a1a;
+  box-shadow: 0 0 0 3px rgba(26, 26, 26, 0.08);
+}
+
+.field__hint {
+  font-size: 12px;
+  color: rgba(26, 26, 26, 0.5) !important;
+  margin: 0;
+}
+
+.form__error {
+  font-size: 13px;
+  color: rgba(220, 38, 38, 0.9) !important;
+  margin: 0 0 12px;
+}
+
+.form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.form__btn {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 11px 22px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 200ms ease;
+}
+
+.form__btn--cancel {
+  background: none;
+  color: rgba(26, 26, 26, 0.7) !important;
+  border-color: rgba(26, 26, 26, 0.2);
+}
+
+.form__btn--cancel:hover {
+  color: #1a1a1a !important;
+  border-color: rgba(26, 26, 26, 0.5);
+}
+
+.form__btn--submit {
+  background: #1a1a1a;
+  color: #ffffff !important;
+  border-color: #1a1a1a;
+}
+
+.form__btn--submit:hover:not(:disabled) {
+  background: #000000;
+}
+
+.form__btn--submit:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}

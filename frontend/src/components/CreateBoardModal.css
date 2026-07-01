@@ -1,0 +1,39 @@
+.board-image-picker {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.board-image-picker__tile {
+  width: 100%;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  padding: 0;
+  cursor: pointer;
+  background: none;
+  transition: transform 200ms ease, border-color 200ms ease;
+}
+
+.board-image-picker__tile img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  filter: grayscale(1);
+  transition: filter 200ms ease;
+}
+
+.board-image-picker__tile:hover img {
+  filter: grayscale(0);
+}
+
+.board-image-picker__tile.is-selected {
+  border-color: #1a1a1a;
+}
+
+.board-image-picker__tile.is-selected img {
+  filter: grayscale(0);
+}

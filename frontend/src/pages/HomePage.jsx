@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { AddButton } from '../components/AddButton'
 import { BoardsSection } from '../components/BoardsSection'
 import { CategoryFilter } from '../components/CategoryFilter'
+import { CreateBoardModal } from '../components/CreateBoardModal'
 import { Footer } from '../components/Footer'
 import { Header } from '../components/Header'
 import { HeroText } from '../components/HeroText'
@@ -34,6 +35,7 @@ export function HomePage() {
   )
   const [searchQuery, setSearchQuery] = useState('')
   const [boards, setBoards] = useState(realBoards)
+  const [isCreateBoardOpen, setIsCreateBoardOpen] = useState(false)
 
   useEffect(() => {
     sessionStorage.setItem(CATEGORY_KEY, selectedCategory)
@@ -63,6 +65,10 @@ export function HomePage() {
     navigate(`/boards/${id}`)
   }
 
+  const handleCreateBoard = (board) => {
+    setBoards((prev) => [board, ...prev])
+  }
+
   return (
     <main className="home-page">
       <Header />
@@ -81,7 +87,7 @@ export function HomePage() {
         <AddButton
           label="add a new board"
           tone="dark"
-          onClick={() => console.log('open create-board modal')}
+          onClick={() => setIsCreateBoardOpen(true)}
         />
       </div>
       <BoardsSection
@@ -90,6 +96,11 @@ export function HomePage() {
         onDelete={handleDeleteBoard}
       />
       <Footer />
+      <CreateBoardModal
+        isOpen={isCreateBoardOpen}
+        onClose={() => setIsCreateBoardOpen(false)}
+        onCreate={handleCreateBoard}
+      />
     </main>
   )
 }
