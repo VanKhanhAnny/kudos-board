@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { AddButton } from '../components/AddButton'
 import { CardGrid } from '../components/CardGrid'
@@ -18,6 +18,10 @@ export function BoardPage() {
   const { boardId } = useParams()
   const board = realBoards.find((b) => b.id === boardId)
   const [cards, setCards] = useState(mockCardsByBoard[boardId] ?? [])
+
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [boardId])
 
   const handleUpvote = (id) => {
     setCards((prev) =>
