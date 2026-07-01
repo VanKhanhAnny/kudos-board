@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AddButton } from '../components/AddButton'
 import { BoardsSection } from '../components/BoardsSection'
@@ -13,6 +13,9 @@ import { heroTiles } from '../data/heroTiles'
 import { realBoards } from '../data/realBoards'
 import './HomePage.css'
 
+const CATEGORY_KEY = 'kudos:home:category'
+const SCROLL_KEY = 'kudos:home:scroll'
+
 function filterBoards(boards, category, query) {
   let result = boards
   if (category === 'recent') result = result.slice(0, 6)
@@ -26,9 +29,28 @@ function filterBoards(boards, category, query) {
 
 export function HomePage() {
   const navigate = useNavigate()
-  const [selectedCategory, setSelectedCategory] = useState('all')
+  const [selectedCategory, setSelectedCategory] = useState(
+    () => sessionStorage.getItem(CATEGORY_KEY) ?? 'all',
+  )
   const [searchQuery, setSearchQuery] = useState('')
   const [boards, setBoards] = useState(realBoards)
+
+  useEffect(() => {
+    sessionStorage.setItem(CATEGORY_KEY, selectedCategory)
+  }, [selectedCategory])
+
+  useEffect(() => {
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual'
+    }
+    const savedScroll = sessionStorage.getItem(SCROLL_KEY)
+    if (savedScroll) {
+      window.scrollTo(0, parseInt(savedScroll, 10))
+      sessionStorage.removeItem(SCROLL_KEY)
+    } else {
+      window.scrollTo(0, 0)
+    }
+  }, [])
 
   const visibleBoards = filterBoards(boards, selectedCategory, searchQuery)
 
@@ -37,6 +59,7 @@ export function HomePage() {
   }
 
   const handleViewBoard = (id) => {
+    sessionStorage.setItem(SCROLL_KEY, String(window.scrollY))
     navigate(`/boards/${id}`)
   }
 
