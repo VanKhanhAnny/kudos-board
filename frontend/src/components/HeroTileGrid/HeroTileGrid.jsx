@@ -1,4 +1,4 @@
-import { HeroTile } from './HeroTile'
+import { HeroTile } from '../HeroTile'
 import './HeroTileGrid.css'
 
 export function HeroTileGrid({ tiles }) {

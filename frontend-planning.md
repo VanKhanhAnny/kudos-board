@@ -219,3 +219,13 @@ Not "build features," just "swap mock writes for real fetches." Order:
 11. **Real auth** — replace `?logged-in=true` URL flag with `AuthContext` reading from `POST /auth/login` response. Add sign-out to hit `POST /auth/logout` (or clear token).
 
 Each step is a small, isolated edit — no page rewrites.
+
+## Decisions Log — Frontend (Milestone 1)
+
+- **Component that diverged most from the original spec**: `BoardCard` — the original spec had one `BoardCard` used everywhere. In practice, the "boards" on the homepage split into two different components: `HeroTile` (decorative mosaic tile in the hero background — just a random image, blinks) and `BoardCard` (real board card — grayscale image, category label, title, hover-revealed view + delete buttons).
+  **What I changed**: Split the original `BoardCard` into two components under different names. `HeroTile` / `HeroTileGrid` render the decorative 30×18 hero mosaic. `BoardCard` / `BoardsSection` render the real interactive boards below the hero. Introduced a new `heroTiles.js` data file (just `{ id, imageUrl }`) that's separate from `realBoards.js` (`{ id, title, category, imageUrl, ... }`) — the mosaic doesn't need "board" fields.
+
+- **State variable I needed that wasn't in the original spec**: `sessionStorage`-backed `kudos:home:category` and `kudos:home:scroll` on `HomePage`. The spec assumed `selectedCategory` and scroll position were fine as local component state, but React Router remounts `HomePage` when you click a board card and come back, wiping both. Users landed at the top of the page on the "all" tab every time.
+  **Which component owns it**: `HomePage` — the state itself is still local `useState`, but `useEffect` writes `selectedCategory` to `sessionStorage` on change, and the scroll position gets written right before navigating to a board detail page. On mount, both are read back and restored (scroll key is deleted after restore so a fresh reload still lands at the top).
+
+- **Prop that didn't match the API response shape and required adjustment**: `Board.imageUrl` was **optional** in the original [planning.md](planning.md) spec (Section 3, "optional cover image; UI falls back per category"), but the new requirements brief the user pasted made it **required** on create. Same for `Card.title` — the original spec had only `message` on cards, but the new brief added `title`. Both are logged as contract diffs in Section 5.6, but they also changed the frontend: `CreateBoardModal` now validates that `imageUrl` is filled before submit (won't allow a category-based fallback), and `CardTile` renders `card.title` as an `<h3>` above `card.message`. Mock data (`realBoards.js`, `mockCards.js`) updated to include these fields so the UI wouldn't render blank spots.

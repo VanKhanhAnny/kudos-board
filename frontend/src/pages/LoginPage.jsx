@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { AuthLayout } from '../components/AuthLayout'
 import { IconField } from '../components/IconField'
 import userIcon from '../assets/icons/username.png'
-import '../components/AuthForm.css'
+import '../components/_shared/AuthForm.css'
 
 export function LoginPage() {
   const navigate = useNavigate()

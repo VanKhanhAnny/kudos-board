@@ -1,5 +1,5 @@
-import { HeroTileGrid } from './HeroTileGrid'
-import { heroTiles } from '../data/heroTiles'
+import { HeroTileGrid } from '../HeroTileGrid'
+import { heroTiles } from '../../data/heroTiles'
 import './AuthLayout.css'
 
 export function AuthLayout({ children }) {

@@ -1,4 +1,4 @@
-import { BoardCard } from './BoardCard'
+import { BoardCard } from '../BoardCard'
 import './BoardsSection.css'
 
 export function BoardsSection({ boards, onView, onDelete }) {

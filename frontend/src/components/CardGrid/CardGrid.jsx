@@ -1,4 +1,4 @@
-import { CardTile } from './CardTile'
+import { CardTile } from '../CardTile'
 import './CardGrid.css'
 
 export function CardGrid({ cards, onUpvote, onDelete }) {

@@ -4,7 +4,7 @@ import { AuthLayout } from '../components/AuthLayout'
 import { IconField } from '../components/IconField'
 import userIcon from '../assets/icons/username.png'
 import mailIcon from '../assets/icons/mail.png'
-import '../components/AuthForm.css'
+import '../components/_shared/AuthForm.css'
 
 export function SignupPage() {
   const navigate = useNavigate()

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { heroImages } from '../data/heroImages'
+import { heroImages } from '../../data/heroImages'
 import './GiphySearch.css'
 
 // TODO: swap for a real fetch to `/api/giphy/search?q=${query}` once the backend proxy is live.

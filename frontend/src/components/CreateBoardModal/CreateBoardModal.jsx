@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { Modal } from './Modal'
-import { heroImages } from '../data/heroImages'
-import './formFields.css'
+import { Modal } from '../Modal'
+import { heroImages } from '../../data/heroImages'
+import '../_shared/formFields.css'
 import './CreateBoardModal.css'
 
 const CATEGORIES = [

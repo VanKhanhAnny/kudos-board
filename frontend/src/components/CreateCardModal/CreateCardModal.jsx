@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { GiphySearch } from './GiphySearch'
-import { Modal } from './Modal'
-import './formFields.css'
+import { GiphySearch } from '../GiphySearch'
+import { Modal } from '../Modal'
+import '../_shared/formFields.css'
 
 export function CreateCardModal({ isOpen, boardId, onClose, onCreate }) {
   const [title, setTitle] = useState('')
