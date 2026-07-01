@@ -1,12 +1,17 @@
+import { HeroTileGrid } from './HeroTileGrid'
+import { heroTiles } from '../data/heroTiles'
 import './AuthLayout.css'
 
 export function AuthLayout({ children }) {
   return (
     <main className="auth-layout">
-      <div className="auth-layout__panel">{children}</div>
-      <div className="auth-layout__grateful" aria-hidden="true">
+      <div className="auth-layout__bg">
+        <HeroTileGrid tiles={heroTiles} />
+        <div className="auth-layout__overlay" />
+      </div>
+      <div className="auth-layout__row">
+        <div className="auth-layout__panel">{children}</div>
         <Sparkle />
-        <span className="auth-layout__grateful-word">grateful</span>
       </div>
     </main>
   )
