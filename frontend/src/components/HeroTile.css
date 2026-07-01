@@ -1,3 +1,14 @@
+@keyframes hero-tile-intro {
+  0% { opacity: 0; }
+  15% { opacity: 0.9; }
+  22% { opacity: 0.1; }
+  32% { opacity: 1; }
+  40% { opacity: 0.2; }
+  55% { opacity: 1; }
+  70% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
 @keyframes hero-tile-blink {
   0%, 100% {
     filter: brightness(1) saturate(1);
@@ -14,13 +25,17 @@
   height: 100%;
   overflow: hidden;
   background: hsl(0, 0%, 83%);
+  opacity: 1;
 }
 
-.hero-tile.is-animating {
-  animation-name: hero-tile-blink;
-  animation-timing-function: ease-in-out;
-  animation-iteration-count: infinite;
-  will-change: opacity;
+.hero-tile.is-intro {
+  animation: hero-tile-intro var(--intro-duration) ease-out var(--intro-delay) both;
+}
+
+.hero-tile.is-intro.is-animating {
+  animation:
+    hero-tile-intro var(--intro-duration) ease-out var(--intro-delay) both,
+    hero-tile-blink var(--ambient-duration) ease-in-out var(--ambient-delay) infinite;
 }
 
 .hero-tile img {
