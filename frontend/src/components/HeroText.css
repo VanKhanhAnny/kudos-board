@@ -1,5 +1,5 @@
 .hero-text {
-  position: fixed;
+  position: absolute;
   inset: 0;
   display: flex;
   align-items: center;
@@ -14,7 +14,9 @@
   margin-top: -8vw;
 }
 
-.hero-text__word {
+.hero-text__word,
+.hero-text__word span,
+.hero-text__rateful {
   font-family:
     -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text',
     system-ui, sans-serif;
@@ -22,7 +24,7 @@
   font-stretch: condensed;
   font-size: 22vw;
   line-height: 1;
-  color: #fff;
+  color: #fff !important;
   letter-spacing: -0.02em;
 }
 
