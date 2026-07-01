@@ -202,7 +202,7 @@ App
   - `gifResults: GiphyResult[]`
   - `isLoading: boolean`
 - **Interactions:**
-  - User types and submits → fetch GIPHY search API (call goes through the backend proxy to keep the API key secret).
+  - User types and submits → fetch GIPHY search API directly from the browser at `https://api.giphy.com/v1/gifs/search`, using `VITE_GIPHY_API_KEY` from `frontend/.env`. No backend proxy.
   - Click on a result → `onSelectGif(url)`.
 
 ---
@@ -227,11 +227,12 @@ List boards, with optional filtering and search.
       "title": "string",
       "category": "CELEBRATION",
       "author": "string | null",
-      "imageUrl": "string | null",
+      "imageUrl": "string",
       "createdAt": "2026-06-26T19:00:00.000Z"
     }
   ]
   ```
+  Note: `imageUrl` is **always non-null** in responses — the server assigns a category-default URL on create if the client doesn't provide one. See Section 3 `Board.imageUrl` notes.
 - **Errors:**
   - `400 Bad Request` — invalid `category` or `filter` value. Body: `{ "error": "Invalid query parameter: ..." }`
   - `500 Internal Server Error` — database failure.
@@ -255,10 +256,11 @@ Create a new board.
     "title": "...",
     "category": "...",
     "author": "... | null",
-    "imageUrl": null,
+    "imageUrl": "string (server-assigned if not in request body)",
     "createdAt": "..."
   }
   ```
+  Note: `imageUrl` is optional in the request body. If the client omits it, the server picks one from a category-default pool and returns it. The response always has a non-null `imageUrl`.
 - **Errors:**
   - `400 Bad Request` — missing/invalid `title` or `category`. Body: `{ "error": "title is required" }` (or similar).
   - `500 Internal Server Error`.
@@ -274,7 +276,7 @@ Get a single board with its cards (used by Board Page).
     "title": "...",
     "category": "...",
     "author": "... | null",
-    "imageUrl": "... | null",
+    "imageUrl": "string",
     "createdAt": "...",
     "cards": [
       {
@@ -368,7 +370,7 @@ Toggle a card's pinned state. If pinning, sets `isPinned = true` and `pinnedAt =
 
 - All 4xx/5xx responses use a uniform shape: `{ "error": "human-readable message" }`.
 - CORS allows the frontend origin (configured via `FRONTEND_ORIGIN` env var).
-- A GIPHY proxy endpoint may be added later (e.g., `GET /api/giphy/search?q=...`) so the API key isn't exposed in the frontend — not in this spec's required list, but called out as a likely addition.
+- GIPHY is called **directly from the frontend**; the backend exposes no GIPHY endpoint. The free-tier GIPHY developer key is intended for client-side use, so the frontend reads it from `VITE_GIPHY_API_KEY` and calls `https://api.giphy.com/v1/gifs/search` directly. See Section 1 `GiphySearch` and Section 5 Frontend ownership.
 
 ---
 
@@ -392,7 +394,7 @@ INSPIRATION
 | `title`     | String     | yes      | —       | 1–100 chars (validated in API layer).         |
 | `category`  | `Category` | yes      | —       | Enum above.                                   |
 | `author`    | String?    | no       | `null`  | Optional creator display name.                |
-| `imageUrl`  | String?    | no       | `null`  | Optional cover image; UI falls back per category. |
+| `imageUrl`  | String?    | no       | `null`  | Optional in DB for forward-compatibility, but the `POST /api/boards` handler **always assigns a category-default URL if the client doesn't provide one**, so API responses always include a non-null `imageUrl`. Default URL pool lives in `backend/src/lib/boardImages.js` (added in Phase 4). |
 | `createdAt` | DateTime   | yes      | `now()` | Used for "Recent" filter and grid ordering.   |
 | `cards`     | `Card[]`   | —        | —       | Relation: one Board has many Cards.           |
 
@@ -490,6 +492,166 @@ Note: `inputValue` is the *uncommitted* input field value. It only becomes the c
 
 - **Sorted card list** in `CardGrid`: derived inside render from `cards` prop. Pinned cards first, ordered by `pinnedAt` descending; then unpinned cards, ordered by `createdAt` descending.
 - **Filtered/searched board list**: NOT derived on the frontend. Filtering and search are pushed to the backend via `GET /api/boards` query params, so what comes back is already the right set.
+
+---
+
+## Section 5: Work Allocation
+
+This section assigns concrete ownership for every artifact in the project. Sections 1–4 are the *integration contract* — what gets built. This section is the *team contract* — who builds what, and how we avoid stepping on each other.
+
+### Roles
+
+- **Anny** — Frontend Lead (Milestone 1). Currently in Figma design phase; will translate to code once mockups are settled.
+- **Eric** (me) — Backend co-owner (foundation + boards routes) (Milestone 2). Owns project scaffolding, schema, shared middleware, and the four board endpoints.
+- **Enes** — Backend co-owner (cards routes) (Milestone 2). Owns all four card endpoints, working in parallel with Eric once foundation is merged.
+- **Milestone 3 (integration)** — Anny + Eric drive; Enes assists if needed.
+
+### Frontend ownership — Anny
+
+Anny owns the entire frontend deliverable. From Sections 1 and 4, that includes:
+
+**Components (all 14 from Section 1):**
+- `App`, `ThemeProvider`, `Header`, `DarkModeToggle`, `Footer`
+- `HomePage`, `Banner`, `SearchBar`, `CategoryFilter`, `BoardGrid`, `BoardCard`, `CreateBoardModal`
+- `BoardPage`, `BoardPageHeader`, `CardGrid`, `CardTile`, `CreateCardModal`, `GiphySearch`
+
+**Infrastructure:**
+- Vite project init in `frontend/` (`npm create vite@latest`)
+- React Router setup (`BrowserRouter`, route config for `/` and `/boards/:boardId`)
+- Styling solution of her choice (CSS modules, Tailwind, etc.)
+- GIPHY API integration in `GiphySearch` — direct browser call to `https://api.giphy.com/v1/gifs/search` using `VITE_GIPHY_API_KEY` from `frontend/.env`. Anny registers for a free GIPHY developer key at developers.giphy.com.
+
+**State (per Section 4):**
+- Everything: page-level state (`HomePage`, `BoardPage`), modal state (`CreateBoardModal`, `CreateCardModal`), `SearchBar.inputValue`, `GiphySearch` state, `ThemeProvider` Context
+
+**Deliverables in planning.md:**
+- Writes the `Decisions Log — Frontend (Milestone 1)` section once frontend is done (template lives in `guide.md`).
+
+**Coordination notes (from Anny's frontend summary, Jun 30):**
+- Backend will run on `http://localhost:3000`. When wiring up real fetch calls in Milestone 3, Anny should set `VITE_API_BASE_URL=http://localhost:3000` in `frontend/.env` and read it via `import.meta.env.VITE_API_BASE_URL`.
+- Anny's current `Header` component shows **log in / register buttons that aren't wired**. User Accounts is out of scope for this version of the spec; the backend will not provide `/api/auth/*` endpoints. Anny should hide or stub those buttons before submission (or move them into a stretch-feature spec update if the team takes on auth later).
+- Vite's default dev port is `5173`. The backend's CORS middleware allows that origin via the `FRONTEND_ORIGIN` env var; if Anny ever runs Vite on a non-default port, update both `.env` files.
+- Anny's `mockBoards` currently has shape `{ id, title, imageUrl }` — this is a strict subset of what `GET /api/boards` returns. She'll need `category` (for the nav tabs to filter) and `createdAt` (for the Recent tab) when she wires the real endpoint.
+
+### Backend ownership — Eric (~50%)
+
+Eric owns the foundation everyone else builds on, plus the 4 board endpoints.
+
+**Foundation (shared infrastructure, must land before Enes can start):**
+- `cd backend && npm init -y`
+- Install `express`, `@prisma/client`, `cors`, `dotenv`; dev-install `prisma`
+- `npx prisma init` → generates `backend/prisma/schema.prisma`
+- Implement `schema.prisma` from the Section 3 spec verbatim
+- First migration: `npx prisma migrate dev --name init`
+- `backend/src/index.js` — Express bootstrap, JSON body parser, CORS middleware reading `FRONTEND_ORIGIN` from env
+- Shared middleware: centralized error handler, request-body validation helpers (Enes reuses these on his card routes)
+- `backend/.env.example` documenting `DATABASE_URL`, `FRONTEND_ORIGIN`, `PORT`
+
+**Endpoints (4 of 8) — all in `backend/src/routes/boards.js`:**
+
+| Method | Path                                | Notes                                          |
+|--------|-------------------------------------|------------------------------------------------|
+| GET    | `/api/boards`                       | Supports `category`, `filter=recent`, `search` query params |
+| POST   | `/api/boards`                       | Validates `title` + `category` required        |
+| GET    | `/api/boards/:id`                   | Uses Prisma `include: { cards: true }`         |
+| DELETE | `/api/boards/:id`                   | Cascade via FK `onDelete: Cascade`             |
+
+**Testing:** Postman/Insomnia collection covering all 4 board endpoints with happy-path + 400/404 cases.
+
+### Backend ownership — Enes (~50%)
+
+Enes inherits a working Express app with schema and middleware already merged on `main`, and owns every route that operates on cards. He works in parallel with Eric — no dependency on Eric's board endpoints landing first.
+
+**Endpoints (4 of 8) — all in `backend/src/routes/cards.js`:**
+
+| Method | Path                              | Implementation hint                                                                 |
+|--------|-----------------------------------|-------------------------------------------------------------------------------------|
+| POST   | `/api/boards/:boardId/cards`      | Validates `message` + `gifUrl` required; 404 if parent board missing                |
+| DELETE | `/api/cards/:id`                  | 404 if card missing                                                                 |
+| PATCH  | `/api/cards/:id/upvote`           | `prisma.card.update({ data: { upvotes: { increment: 1 } } })`                       |
+| PATCH  | `/api/cards/:id/pin`              | Fetch card, toggle `isPinned`, set `pinnedAt = new Date()` on pin / `null` on unpin |
+
+**Router structure:** `cards.js` exports an `express.Router({ mergeParams: true })`. `index.js` mounts it twice: at `/api/boards/:boardId/cards` (so `POST /` inside the router resolves to the create-card contract and `req.params.boardId` is populated) and at `/api/cards` (for the DELETE + two PATCH routes). Inside the router, use `:id` for the card id and rely on the mount path to distinguish.
+
+**Testing:** Postman/Insomnia collection covering all 4 card endpoints with happy-path + 400/404 cases.
+
+**Deliverables in planning.md:**
+- Writes the `Spec Reconciliation — Backend (Milestone 2)` section once backend is fully merged (template lives in `guide.md`).
+
+### Single-owner artifacts (no concurrent edits)
+
+To avoid merge conflicts, the following files have one designated writer:
+
+| Artifact                                   | Single owner | Why                                                         |
+|--------------------------------------------|--------------|-------------------------------------------------------------|
+| `backend/prisma/schema.prisma`             | Eric         | Migration history must be linear; one person runs migrations|
+| `backend/prisma/migrations/`               | Eric         | Same reason                                                 |
+| `backend/src/routes/boards.js`             | Eric         | Board endpoints are all his; keeps that file conflict-free  |
+| `backend/src/routes/cards.js`              | Enes         | Card endpoints are all his; keeps that file conflict-free   |
+| `frontend/package.json` + lockfile         | Anny         | Frontend dependency tree is hers                            |
+| `backend/package.json` + lockfile          | Eric         | Backend dependency tree is his                              |
+| `planning.md` Section 3 (Database Schema)  | Eric         | Schema is the source of truth                               |
+
+Both router files are mounted from `backend/src/index.js`. That file is multi-writer, but router mounts are add-only lines — each dev appends their `app.use(...)` next to the existing mounts rather than reordering, which keeps merges trivial.
+
+If Anny or Enes needs a schema change (new field, type change), they open a PR that updates the Section 3 spec and tags Eric; Eric applies the migration in a follow-up.
+
+### Handoff signal — when Enes can start
+
+Even though Eric and Enes work in parallel after this point, Enes waits for Eric to land a small "shape-setting" slice first, so both routers converge on the same conventions (validation style, response bodies, error handling, file layout) instead of diverging.
+
+Concrete green-light: Enes pulls `main` and starts `backend/src/routes/cards.js` **after** all of the following are merged:
+1. `backend/prisma/schema.prisma` matches Section 3 and the init migration is applied. *(merged Jun 30)*
+2. `backend/src/index.js` boots cleanly with CORS, JSON parsing, and the error-handler middleware. *(merged Jun 30)*
+3. Eric has landed three shape-setting routes in `backend/src/routes/boards.js`, each with passing Postman tests:
+   - `POST /api/boards` — establishes the validation-via-`requireFields` + defaults + 201-with-full-body pattern that Enes reuses for `POST /api/boards/:boardId/cards`.
+   - `GET /api/boards/:id` — establishes the fetch-then-404 pattern that Enes reuses in his two PATCH routes (both need to 404 on missing card before mutating).
+   - `DELETE /api/boards/:id` — establishes the delete + 204 No Content pattern (P2025 caught by centralized error handler) that Enes reuses for `DELETE /api/cards/:id`.
+
+Eric's remaining route (`GET /api/boards`) does not gate the handoff and can land after Enes starts.
+
+Until the green-light, Enes is unblocked to: review the spec, set up Postman, write fixture data, or pair-review Eric's PRs.
+
+### Collaboration rules
+
+These rules govern how three people commit against this repo without the spec drifting.
+
+1. **One feature branch per endpoint or per logical chunk.** Branch names: `backend/<resource>-<verb>` (e.g., `backend/boards-create`), `frontend/<component>` (e.g., `frontend/board-grid`). PR into `main`.
+2. **Spec-parity rule** (reinforces Maintenance rule below): any PR that changes an API contract, schema field, or component shape **must update the corresponding section of `planning.md` in the same PR**. No "I'll update the spec later." If the PR doesn't update the spec, the spec is now the source of truth and the implementation is wrong.
+3. **Schema is single-writer** (Eric). All other planning.md sections are multi-writer — anyone can edit Sections 1, 2, 4, 5 in a PR.
+4. **Anny may add components not in Section 1** as the design evolves. She updates Section 1 + Section 4 in the same PR.
+5. **No direct pushes to `main`.** Every change goes through a PR, even if the author is the only reviewer.
+6. **API contract changes need backend sign-off.** If Anny finds the frontend needs a field the contract doesn't return, she opens an issue or PR proposing the change rather than working around it client-side.
+
+### Status snapshot
+
+A lightweight checklist that gets ticked off as work progresses (any teammate can update):
+
+**Milestone 0 — Planning**
+- [x] Repo initialized with `frontend/` and `backend/` directories
+- [x] `planning.md` Sections 1–4 drafted
+- [x] `planning.md` Section 5 (this section) drafted
+- [ ] `planning.md` committed to `main`
+
+**Milestone 1 — Frontend (Anny)**
+- [ ] Figma mockups finalized
+- [ ] Vite + React Router scaffolded
+- [ ] Components implemented per Section 1
+- [ ] `Decisions Log — Frontend (Milestone 1)` written
+
+**Milestone 2 — Backend (Eric + Enes in parallel after shape-setting handoff)**
+- [x] (Eric) Backend scaffold: npm, Prisma, Express, middleware
+- [x] (Eric) `schema.prisma` + init migration
+- [ ] (Eric) Shape-setting routes: `POST /api/boards`, `GET /api/boards/:id`, `DELETE /api/boards/:id` + Postman tests
+- [ ] (Eric) Handoff signal fires → Enes starts `routes/cards.js`
+- [ ] (Eric) Remaining route: `GET /api/boards` + Postman tests
+- [ ] (Enes) 4 card endpoints + Postman tests
+- [ ] (Enes) `Spec Reconciliation — Backend (Milestone 2)` written
+
+**Milestone 3 — Integration (Anny + Eric)**
+- [ ] Frontend `fetch` calls wired to backend endpoints
+- [ ] CORS verified end-to-end
+- [ ] `Final Spec Reconciliation — Full Pipeline (Milestone 3)` written
 
 ---
 

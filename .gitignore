@@ -33,3 +33,6 @@ backend/prisma/migrations/dev.db*
 # Coverage / test artifacts
 coverage/
 .nyc_output/
+
+#Dev Documentation
+guide.md
