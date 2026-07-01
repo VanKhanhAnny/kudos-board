@@ -1,236 +1,221 @@
 # Kudos Board — Frontend Planning
 **Stack:** Vite + React (JavaScript) + React Router
 
+Frontend build is **complete against the requirements**. This document is now a handoff reference for backend integration.
+
 ---
 
 ## 1. Current status
 
-### Built
-- `HomePage` shell: fixed hero with decorative image mosaic, dark overlay, "grateful" text; scrollable page with quote + boards below.
-- `HeroTile` / `HeroTileGrid`: 30×18 decorative mosaic. 20% of tiles infinite-blink with brightness + glow halo. Purely visual — feeds off `heroTiles.js` (`{ id, imageUrl }` only).
-- `HeroText`: sparkle + "grateful" word rendered as 4 stacked copies (sharp + 3 blur levels) with mask gradients for progressive blur.
-- `Header`: fixed top-right auth buttons (`log in` = solid black w/ grey text, `register` = solid white).
-- `ScrollQuote`: italic quote that fades + slides + un-blurs on scroll into view. Dark backdrop, white text with glow.
-- `SearchBar`: pill input with clear button. Currently reports `onSearch(value)` per keystroke.
-- `CategoryFilter`: 5 tab pills — All / Recent / Celebration / Thank You / Inspiration.
-- `BoardCard`: grayscale image → hover reveals color + zoom. View + Delete buttons appear on hover (bottom gradient). Shows category label + title below.
-- `BoardsSection`: responsive 4/3/2/1-column grid of `BoardCard`s. Empty state message.
-- Mock data: `heroImages.js` (16 JPGs), `heroTiles.js` (540 tiles), `realBoards.js` (10 sample boards).
+All core requirements are implemented. UI runs entirely on mock data — swap to real API is a per-page edit once backend endpoints are live.
 
-### Not yet built
-- Router setup (`react-router-dom` not installed).
-- API client (`src/lib/api.js`).
-- Create board modal + button.
-- Board detail page (`/boards/:id`): cards grid, create card, delete card, upvote card.
-- GIPHY search widget.
-- Auth flows behind `log in` / `register` buttons.
+### Completed
+- **HomePage** (`/`) — decorative hero mosaic, scroll-triggered quote, search, category filter, add-board button, boards grid, footer.
+- **BoardPage** (`/boards/:boardId`) — board title + category, add-card button, cards grid, upvote + delete per card, back link.
+- **LoginPage** (`/login`) — username + password with eye-toggle. Frosted panel over the same hero mosaic.
+- **SignupPage** (`/register`) — username + email + password + confirm password with eye-toggles.
+- **Modals** — reusable `Modal` shell (ESC + click-outside + body scroll lock). `CreateBoardModal` (title, category, imageUrl, author). `CreateCardModal` (title, message, gif via `GiphySearch`, author).
+- **Delete / upvote** — inline actions on cards; hover-revealed delete + view on board cards.
+- **Header** — fixed top-right auth buttons; when `?logged-in=true` in URL, swaps to a glowing "Hi Anny!" pill with a sign-out dropdown (UI preview only; no real session).
+- **API client** — [`src/lib/api.js`](frontend/src/lib/api.js) with one function per endpoint, ready to swap in.
+- **Responsive** — breakpoints on the boards grid, cards grid, auth layout.
+- **Session persistence** — `sessionStorage` keeps home page scroll + selected category when returning from a board detail page.
+- **Hero intro animation** — every tile flickers to life on mount; 20% of tiles keep an ambient blink after.
 
-### Known issues to revisit
-- `.hero-tile-grid` has `filter: grayscale(1)` on the parent, muting the `saturate(1.5)` in child blink animation.
-- Global `h1..h6, p, a, span, button` color override in `index.css` is too aggressive — forcing `!important` in hero + quote to compensate. Better long-term: scope global text color to a class or wrapper.
+### Deliberately not built
+- **Pinning cards** (stretch feature in the base [planning.md](planning.md)). Not in the base requirements you pasted; skip unless needed.
+- **Dark mode** (stretch feature). Not implemented.
+- **Real GIPHY** — `GiphySearch` uses `heroImages` as mock results. Requires a backend proxy (`/api/giphy/search`) since the API key must stay server-side.
+- **Real auth** — login/signup forms currently `navigate('/')` on submit. When backend adds `POST /auth/login` and `POST /auth/register`, wire those into the submit handlers and add a session-aware `AuthContext`.
+- **Loading + error states** — only meaningful against a real API. Add during backend integration.
+- **Board cover image on BoardPage** — detail page currently shows title + category only, not `board.imageUrl`. Small 5-min addition; do when convenient.
 
----
-
-## 2. Routes
-
-```
-/                    → HomePage   (hero + quote + filter + search + boards)
-/boards/:boardId     → BoardPage  (single board + cards)
-```
-
-Wrap in `<BrowserRouter>` inside `App.jsx`.
+### Known small issues to revisit
+- `.hero-tile-grid` has `filter: grayscale(1)` on the parent, which mutes the `saturate(1.5)` in child blink animation.
+- Global `h1..h6, p, a, span, button` color override in `index.css` is heavy-handed; requires `!important` in a handful of places. Long-term: scope to a wrapper class.
 
 ---
 
-## 3. Component tree
+## 2. File map
 
 ```
-App
-└── BrowserRouter
-    ├── Header                              (fixed top-right; log in + register)
-    ├── Routes
-    │   ├── "/"        → HomePage
-    │   │                ├── HeroSection
-    │   │                │   ├── HeroTileGrid            (decorative)
-    │   │                │   │   └── HeroTile   (× 540)
-    │   │                │   └── HeroText
-    │   │                ├── ScrollQuote
-    │   │                ├── SearchBar
-    │   │                ├── CategoryFilter
-    │   │                ├── CreateBoardButton           (not yet built)
-    │   │                ├── CreateBoardModal            (conditional, not yet built)
-    │   │                └── BoardsSection
-    │   │                    └── BoardCard   (× N, view + delete on hover)
-    │   └── "/boards/:id" → BoardPage       (not yet built)
-    │                        ├── BoardPageHeader
-    │                        ├── CreateCardButton
-    │                        ├── CreateCardModal
-    │                        │   └── GiphySearch
-    │                        └── CardGrid
-    │                            └── CardTile
-    └── Footer                              (not yet built)
+frontend/src/
+├── App.jsx                    BrowserRouter + 4 routes
+├── App.css
+├── index.css                  Global type + colors
+├── main.jsx                   Entry
+│
+├── assets/
+│   ├── DSC*, IMG_*.JPG        Hero mosaic source images
+│   └── icons/
+│       ├── eye.png            Password field: show
+│       ├── hidden.png         Password field: hide
+│       ├── human.png          (unused)
+│       ├── mail.png           Auth field icon
+│       └── username.png       Auth field icon
+│
+├── data/                      Mock data (temporary; deleted when backend is real)
+│   ├── heroImages.js          16 imported image URLs
+│   ├── heroTiles.js           540 { id, imageUrl } tiles for the hero mosaic
+│   ├── realBoards.js          10 sample boards
+│   └── mockCards.js           Cards keyed by board id (4–9 per board)
+│
+├── lib/
+│   └── api.js                 Fetch wrapper with 8 endpoints
+│
+├── pages/
+│   ├── HomePage.jsx / .css
+│   ├── BoardPage.jsx / .css
+│   ├── LoginPage.jsx
+│   └── SignupPage.jsx
+│
+└── components/
+    ├── Header.jsx / .css              Fixed top-right auth pills or "Hi Anny!"
+    ├── Footer.jsx / .css
+    │
+    ├── HeroTile.jsx / .css            Single decorative mosaic tile
+    ├── HeroTileGrid.jsx / .css        30×18 mosaic
+    ├── HeroText.jsx / .css            "grateful" + sparkle w/ progressive blur
+    ├── ScrollQuote.jsx / .css         Fades in on scroll
+    │
+    ├── SearchBar.jsx / .css
+    ├── CategoryFilter.jsx / .css
+    ├── AddButton.jsx / .css           Reused for "+ new board" and "+ new card"
+    │
+    ├── BoardCard.jsx / .css           Board tile with view + delete on hover
+    ├── BoardsSection.jsx / .css       Grid of BoardCards + empty state
+    │
+    ├── CardTile.jsx / .css            Card w/ image + title + message + upvote + delete
+    ├── CardGrid.jsx / .css            Grid of CardTiles + empty state
+    │
+    ├── Modal.jsx / .css               Reusable modal shell
+    ├── formFields.css                 Shared field/label/button styles
+    ├── CreateBoardModal.jsx / .css
+    ├── CreateCardModal.jsx
+    ├── GiphySearch.jsx / .css         Mock GIPHY (uses heroImages)
+    │
+    ├── AuthLayout.jsx / .css          Frosted panel + sparkle over hero mosaic
+    ├── AuthForm.css                   Shared title / submit / footer styles
+    └── IconField.jsx / .css           Pill input w/ icon + password eye toggle
 ```
 
 ---
 
-## 4. State (owned by frontend)
+## 3. Routes
 
-### `HomePage` (current)
-| State              | Type       | Initial     | Trigger                                                  |
-|--------------------|------------|-------------|----------------------------------------------------------|
-| `boards`           | `Board[]`  | `realBoards`| Set from API; mutated by delete callback.                |
-| `selectedCategory` | `string`   | `"all"`     | `CategoryFilter` click.                                  |
-| `searchQuery`      | `string`   | `""`        | `SearchBar` submit / clear.                              |
+```
+/                    → HomePage
+/boards/:boardId     → BoardPage
+/login               → LoginPage
+/register            → SignupPage
+```
 
-**Note:** filtering is done client-side right now for the mock data. Will move to backend query params once API is live.
+`?logged-in=true` on any route makes the Header show "Hi Anny!" + sign-out dropdown. This is a UI preview flag only — delete when real auth ships.
 
-### `SearchBar`
-| State   | Type     | Initial | Trigger                       |
-|---------|----------|---------|-------------------------------|
-| `value` | `string` | `""`    | Every keystroke (controlled). |
+---
 
-### `CreateBoardModal` (planned)
-| State          | Type     | Initial         | Trigger                     |
-|----------------|----------|-----------------|-----------------------------|
-| `title`        | `string` | `""`            | Input keystroke.            |
-| `category`     | enum     | `"CELEBRATION"` | Select change.              |
-| `author`       | `string` | `""`            | Input keystroke.            |
-| `imageUrl`     | `string` | `""`            | Input keystroke. Required.  |
-| `isSubmitting` | `bool`   | `false`         | Around API call.            |
-| `errorMessage` | `string?`| `null`          | Set on error.               |
+## 4. State summary
 
-### `BoardPage` (planned)
-| State                   | Type            | Initial | Trigger                              |
-|-------------------------|-----------------|---------|--------------------------------------|
-| `board`                 | `Board \| null` | `null`  | Fetch on mount / param change.       |
-| `cards`                 | `Card[]`        | `[]`    | From fetch; mutated by CRUD/upvote.  |
-| `isCreateCardModalOpen` | `bool`          | `false` | Button click / successful create.    |
+| Component | Owns |
+|---|---|
+| `HomePage` | `boards`, `selectedCategory`, `searchQuery`, `isCreateBoardOpen`. Persists `selectedCategory` + scroll to `sessionStorage`. |
+| `BoardPage` | `cards`, `isCreateCardOpen`. Reads `boardId` from `useParams`. Resets scroll on mount. |
+| `SearchBar` | Local `value`. Reports `onSearch(value)` per keystroke. |
+| `CreateBoardModal` | `title`, `category`, `imageUrl`, `author`, `error`. Resets on close. |
+| `CreateCardModal` | `title`, `message`, `author`, `selectedGifUrl`, `error`. |
+| `GiphySearch` | `query`, `results`, `isLoading`. Uses mock search. |
+| `Header` | `isMenuOpen` (sign-out dropdown). Reads `logged-in` from URL search params. |
+| `LoginPage` / `SignupPage` | Form fields + `error`. |
 
-### `CreateCardModal` (planned)
-| State            | Type            | Initial | Trigger                             |
-|------------------|-----------------|---------|-------------------------------------|
-| `title`          | `string`        | `""`    | Input keystroke. Required.          |
-| `message`        | `string`        | `""`    | Textarea keystroke.                 |
-| `author`         | `string`        | `""`    | Input keystroke.                    |
-| `selectedGifUrl` | `string \| null`| `null`  | `GiphySearch` → `onSelectGif`.      |
-| `isSubmitting`   | `bool`          | `false` | Around API call.                    |
-| `errorMessage`   | `string?`       | `null`  | Set on error.                       |
-
-### `GiphySearch` (planned)
-| State        | Type      | Initial | Trigger                    |
-|--------------|-----------|---------|----------------------------|
-| `gifQuery`   | `string`  | `""`    | Input keystroke.           |
-| `gifResults` | `array`   | `[]`    | Set after GIPHY response.  |
-| `isLoading`  | `bool`    | `false` | While request in flight.   |
+No global store. `AuthContext` will be needed once real auth lands.
 
 ---
 
 ## 5. What the backend needs to deliver
 
-The frontend is currently mocking every one of these. When the backend is up, we swap `filterBoards()` / local state mutation for real `fetch` calls. Contract details in [planning.md](planning.md) section 2.
+Full contract in [planning.md](planning.md) section 2. Summary of what the frontend actually calls:
 
-### 5.1 Data models (must match what frontend renders)
+### 5.1 Data models
 
-**`Board`** — used by `BoardCard`, `BoardsSection`, `BoardPage`:
+**`Board`** — rendered by `BoardCard`, `BoardsSection`, `BoardPage`:
 ```
 {
   id: string,
-  title: string,           // shown as card title
+  title: string,
   category: "CELEBRATION" | "THANK_YOU" | "INSPIRATION",
-  imageUrl: string,        // REQUIRED — used as the card's image
-  author: string | null,   // optional
-  createdAt: ISO string    // used for "recent" filter
+  imageUrl: string,        // REQUIRED
+  author: string | null,
+  createdAt: ISO string
 }
 ```
 
-**`Card`** — used by `CardTile` on the board detail page:
+**`Card`** — rendered by `CardTile`:
 ```
 {
   id: string,
   boardId: string,
-  title: string,           // REQUIRED per new brief (in addition to message)
+  title: string,           // REQUIRED
   message: string,
-  gifUrl: string,          // GIPHY URL
+  gifUrl: string,
   author: string | null,
   upvotes: number,
   createdAt: ISO string
 }
 ```
 
-### 5.2 Endpoints the frontend calls
+### 5.2 Endpoints called by [src/lib/api.js](frontend/src/lib/api.js)
 
-Base URL comes from `VITE_API_URL` env var (default `http://localhost:3000/api`). All responses JSON.
+| Method + path | Called by | Request body / query | Returns |
+|---|---|---|---|
+| `GET /boards` | `HomePage` on mount + on filter/search change | `?category=` / `?filter=recent` / `?search=` | `Board[]` |
+| `POST /boards` | `CreateBoardModal` submit | `{ title, category, imageUrl, author? }` | `Board` |
+| `GET /boards/:id` | `BoardPage` on mount | — | `Board & { cards: Card[] }` |
+| `DELETE /boards/:id` | `BoardCard` delete button | — | `204` |
+| `POST /boards/:boardId/cards` | `CreateCardModal` submit | `{ title, message, gifUrl, author? }` | `Card` |
+| `DELETE /cards/:id` | `CardTile` delete button | — | `204` |
+| `PATCH /cards/:id/upvote` | `CardTile` upvote button | — | `Card` (updated) |
+| `GET /giphy/search?q=` | `GiphySearch` submit | `?q=...` | `[{ id, url, previewUrl }]` |
 
-| Method + path                          | What the frontend does with it                                            | Query / body                                                                            | Returns                             |
-|----------------------------------------|---------------------------------------------------------------------------|------------------------------------------------------------------------------------------|-------------------------------------|
-| `GET /boards`                          | `HomePage` fetches on mount + on filter/search change.                    | `?category=...` / `?filter=recent` / `?search=...` (any combination)                     | `Board[]`                           |
-| `POST /boards`                         | `CreateBoardModal` submit.                                                | `{ title, category, imageUrl, author? }`                                                 | `Board` (the created one)           |
-| `GET /boards/:id`                      | `BoardPage` fetches on mount / param change.                              | —                                                                                        | `Board & { cards: Card[] }`         |
-| `DELETE /boards/:id`                   | `BoardCard` delete button (with confirm).                                 | —                                                                                        | `204`                               |
-| `POST /boards/:boardId/cards`          | `CreateCardModal` submit.                                                 | `{ title, message, gifUrl, author? }`                                                    | `Card` (the created one)            |
-| `DELETE /cards/:id`                    | `CardTile` delete button.                                                 | —                                                                                        | `204`                               |
-| `PATCH /cards/:id/upvote`              | `CardTile` upvote button. Increments by 1.                                | —                                                                                        | `Card` (updated)                    |
-| `GET /giphy/search?q=`                 | `GiphySearch` typeahead. Proxies GIPHY so the API key stays server-side.  | `?q=...`                                                                                 | array of `{ id, url, previewUrl }`  |
+### 5.3 Filter / search behavior
 
-### 5.3 Filtering / searching rules
-
-Frontend just passes query params; backend does the work:
-
-- `?category=CELEBRATION` (or `THANK_YOU`, `INSPIRATION`) → return only boards in that category.
-- `?filter=recent` → return only the 6 most-recently-created boards (ignores category if both given).
-- `?search=summer` → case-insensitive substring match on `Board.title`.
-- Combine `category` + `search`: apply both.
-- No params: return all boards.
-
-Sort order (when not explicitly filtered): `createdAt` descending.
+Backend does the work; frontend just forwards query params:
+- `?category=CELEBRATION|THANK_YOU|INSPIRATION` → only that category.
+- `?filter=recent` → 6 most-recent boards (ignores `category` if both).
+- `?search=summer` → case-insensitive substring on `Board.title`.
+- No params → all boards. Sort: `createdAt` DESC.
 
 ### 5.4 Errors
 
-- All 4xx / 5xx should return `{ "error": "human-readable message" }` so the frontend can surface it in the modal's `errorMessage`.
-- CORS must allow the Vite dev origin (usually `http://localhost:5173`). Configure via `FRONTEND_ORIGIN` env var so it can be pointed at prod later.
+- All 4xx / 5xx return `{ "error": "human-readable message" }` — the api client throws with `.message` set to that string, so submit handlers can `try/catch` and surface `errorMessage` in modals.
+- CORS: allow Vite dev origin (usually `http://localhost:5173`), configurable via `FRONTEND_ORIGIN` env var.
 
-### 5.5 Environment / auth
+### 5.5 Environment
 
-- Frontend needs `VITE_API_URL` set at build time. If unset, defaults to `http://localhost:3000/api`.
-- Auth (`log in` / `register` buttons) is not spec'd yet — the buttons currently do nothing. When we add auth, the backend will need `POST /auth/register`, `POST /auth/login`, and either sessions or JWT.
+- Frontend reads `VITE_API_URL` at build time (defaults to `http://localhost:3000/api`).
+- Local dev file: [`frontend/.env`](frontend/.env) (gitignored). Template: [`frontend/.env.example`](frontend/.env.example).
 
-### 5.6 Contract diffs from the base spec
+### 5.6 Contract diffs already logged
 
-Two things in [planning.md](planning.md) need updating before implementation — both raised by the new brief:
-
-1. **`Board.imageUrl` must be required** (spec currently has it optional).
-2. **`Card.title` field must be added** (spec currently only has `message`). `POST /boards/:boardId/cards` needs `title` in the request body.
-
----
-
-## 6. API client shape
-
-`src/lib/api.js` will export thin wrappers around `fetch`:
-
-```js
-export async function getBoards({ category, filter, search } = {}) { ... }
-export async function createBoard(payload) { ... }
-export async function getBoard(id) { ... }
-export async function deleteBoard(id) { ... }
-export async function createCard(boardId, payload) { ... }
-export async function deleteCard(id) { ... }
-export async function upvoteCard(id) { ... }
-export async function searchGiphy(query) { ... }
-```
-
-Each throws on non-2xx so components can `try/catch` in submit handlers.
+Two updates needed in [planning.md](planning.md) before backend implementation:
+1. **`Board.imageUrl` required** (spec has it optional).
+2. **`Card.title` field added** (spec has only `message`). Include in `POST /boards/:boardId/cards` body.
 
 ---
 
-## 7. Build order (recommended)
+## 6. Backend integration — swap plan
 
-1. Install `react-router-dom`, wire routes.
-2. API client with mock returns.
-3. Wire `HomePage` fetch on mount → replace `realBoards.js` usage.
-4. Move filter + search to query params (drop client-side `filterBoards`).
-5. `CreateBoardButton` + `CreateBoardModal` — form + submit + optimistic prepend.
-6. Real delete on `BoardCard` (currently just splices local state).
-7. `BoardPage` — route, fetch, `BoardPageHeader`, `CardGrid`, `CardTile`.
-8. `CreateCardModal` + `GiphySearch`.
-9. Upvote + delete card.
-10. Empty / loading states + responsive polish.
+Not "build features," just "swap mock writes for real fetches." Order:
+
+1. **Copy `.env.example` → `.env`**, set `VITE_API_URL` to backend host.
+2. **`HomePage`** — replace `useState(realBoards)` + local `filterBoards()` with `useEffect(() => api.getBoards({...}), [category, search])`. Delete client-side filtering.
+3. **`CreateBoardModal`** — replace `onCreate` local prepend with `api.createBoard(payload)`.
+4. **`BoardCard` delete** — replace local splice with `api.deleteBoard(id)` (keep optimistic UI).
+5. **`BoardPage`** — replace `useState(mockCardsByBoard[boardId])` with `api.getBoard(boardId)`.
+6. **`CreateCardModal`** — replace `onCreate` with `api.createCard(boardId, payload)`.
+7. **`CardTile` upvote / delete** — call `api.upvoteCard` / `api.deleteCard`.
+8. **`GiphySearch`** — replace `mockSearch()` with `api.searchGiphy(query)`.
+9. **Delete mock data** — `realBoards.js`, `mockCards.js`. Keep `heroTiles.js` + `heroImages.js` (used by the decorative mosaic).
+10. **Loading + error states** — each page gets an `isLoading` boolean and an error banner. Modal error messages already have a slot.
+11. **Real auth** — replace `?logged-in=true` URL flag with `AuthContext` reading from `POST /auth/login` response. Add sign-out to hit `POST /auth/logout` (or clear token).
+
+Each step is a small, isolated edit — no page rewrites.
