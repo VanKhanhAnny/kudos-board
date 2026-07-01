@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { BoardsSection } from '../components/BoardsSection'
 import { CategoryFilter } from '../components/CategoryFilter'
+import { Footer } from '../components/Footer'
 import { Header } from '../components/Header'
 import { HeroText } from '../components/HeroText'
 import { HeroTileGrid } from '../components/HeroTileGrid'
@@ -57,6 +58,7 @@ export function HomePage() {
         onView={handleViewBoard}
         onDelete={handleDeleteBoard}
       />
+      <Footer />
     </main>
   )
 }
