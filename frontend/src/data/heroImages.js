@@ -1,0 +1,18 @@
+export const heroImages = [
+  '/DSC03074.JPG',
+  '/DSC03130.JPG',
+  '/DSC03132.JPG',
+  '/DSC03151.JPG',
+  '/DSC03180.JPG',
+  '/DSC03212.JPG',
+  '/DSC03218.JPG',
+  '/DSC03251.JPG',
+  '/DSC03255.JPG',
+  '/IMG_4573.JPG',
+  '/IMG_4575.JPG',
+  '/IMG_4576.JPG',
+  '/IMG_4596.JPG',
+  '/IMG_4660.JPG',
+  '/IMG_4668.JPG',
+  '/IMG_4680.JPG',
+]

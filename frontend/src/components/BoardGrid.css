@@ -1,0 +1,13 @@
+.board-grid {
+  display: grid;
+  grid-template-columns: repeat(30, 1fr);
+  grid-template-rows: repeat(18, 1fr);
+  gap: 1px;
+  padding: 1px;
+  width: 100vw;
+  height: 100vh;
+  box-sizing: border-box;
+  overflow: hidden;
+  background: #d4d4d4;
+  filter: blur(0px) grayscale(1);
+}

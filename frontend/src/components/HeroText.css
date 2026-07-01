@@ -1,0 +1,138 @@
+.hero-text {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.hero-text__word-wrap {
+  position: relative;
+  display: inline-block;
+  margin-top: -8vw;
+}
+
+.hero-text__word {
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text',
+    system-ui, sans-serif;
+  font-weight: 100;
+  font-stretch: condensed;
+  font-size: 22vw;
+  line-height: 1;
+  color: #fff;
+  letter-spacing: -0.02em;
+}
+
+.hero-text__word--sharp {
+  position: relative;
+}
+
+.hero-text__word--blur-1,
+.hero-text__word--blur-2,
+.hero-text__word--blur-3 {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.hero-text__word--blur-1 {
+  filter: blur(6px);
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    transparent 30%,
+    #000 55%,
+    #000 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    transparent 30%,
+    #000 55%,
+    #000 100%
+  );
+}
+
+.hero-text__word--blur-2 {
+  filter: blur(14px);
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    transparent 55%,
+    #000 80%,
+    #000 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    transparent 55%,
+    #000 80%,
+    #000 100%
+  );
+}
+
+.hero-text__word--blur-3 {
+  filter: blur(100px);
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    transparent 75%,
+    #000 95%,
+    #000 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    transparent 50%,
+    #000 95%,
+    #000 100%
+  );
+}
+
+.hero-text__rateful {
+  display: inline-block;
+  position: relative;
+}
+
+.hero-text__underline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0.1em;
+  height: 5px;
+  background: #fff;
+  filter: blur(1px);
+  pointer-events: none;
+  z-index: 20;
+}
+
+.hero-text__stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.hero-text__sparkle {
+  width: 7vw;
+  height: 7vw;
+  margin-left: 2vw;
+  filter: drop-shadow(0 0 16px rgba(255, 255, 255, 0.95))
+    drop-shadow(0 0 32px rgba(255, 255, 255, 0.7))
+    drop-shadow(0 0 60px rgba(255, 255, 255, 0.5));
+  z-index: 3;
+}
+
+.hero-text__sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
