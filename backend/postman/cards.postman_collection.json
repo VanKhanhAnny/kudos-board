@@ -1,0 +1,284 @@
+{
+  "info": {
+    "name": "Kudos Board — Cards (Milestone 2, Enes)",
+    "description": "Covers the four card endpoints from planning.md §2/§5: create, delete, upvote, pin. Happy-path plus 400/404 cases. Set collection variables baseUrl (default http://localhost:3000), boardId, and cardId. Run 'Setup: create board' first to populate boardId, then 'Create card (201)' to populate cardId.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000" },
+    { "key": "boardId", "value": "" },
+    { "key": "cardId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Setup: create board",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('201 Created', () => pm.response.to.have.status(201));",
+              "pm.collectionVariables.set('boardId', pm.response.json().id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": { "raw": "{{baseUrl}}/api/boards", "host": ["{{baseUrl}}"], "path": ["api", "boards"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Team Wins\",\n  \"category\": \"CELEBRATION\",\n  \"imageUrl\": \"https://example.com/board.png\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Create card (201)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('201 Created', () => pm.response.to.have.status(201));",
+              "const c = pm.response.json();",
+              "pm.test('returns full card body', () => {",
+              "  pm.expect(c).to.have.property('id');",
+              "  pm.expect(c.title).to.eql('Great job');",
+              "  pm.expect(c.upvotes).to.eql(0);",
+              "  pm.expect(c.isPinned).to.eql(false);",
+              "  pm.expect(c.pinnedAt).to.eql(null);",
+              "  pm.expect(c.boardId).to.eql(pm.collectionVariables.get('boardId'));",
+              "});",
+              "pm.collectionVariables.set('cardId', c.id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": {
+          "raw": "{{baseUrl}}/api/boards/{{boardId}}/cards",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "boards", "{{boardId}}", "cards"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Great job\",\n  \"message\": \"You shipped it\",\n  \"gifUrl\": \"https://giphy.com/a.gif\",\n  \"author\": \"Enes\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Create card — missing gifUrl (400)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+              "pm.test('error names the missing field', () => pm.expect(pm.response.json().error).to.include('gifUrl'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": {
+          "raw": "{{baseUrl}}/api/boards/{{boardId}}/cards",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "boards", "{{boardId}}", "cards"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"No gif\",\n  \"message\": \"missing gifUrl\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Create card — parent board missing (404)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('404 Not Found', () => pm.response.to.have.status(404));",
+              "pm.test('error mentions board', () => pm.expect(pm.response.json().error).to.include('Board'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": {
+          "raw": "{{baseUrl}}/api/boards/does-not-exist/cards",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "boards", "does-not-exist", "cards"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Orphan\",\n  \"message\": \"no parent\",\n  \"gifUrl\": \"https://giphy.com/a.gif\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Upvote card (200)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('200 OK', () => pm.response.to.have.status(200));",
+              "pm.test('upvotes incremented to 1', () => pm.expect(pm.response.json().upvotes).to.eql(1));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/cards/{{cardId}}/upvote",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "cards", "{{cardId}}", "upvote"]
+        }
+      }
+    },
+    {
+      "name": "Upvote card — missing (404)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": ["pm.test('404 Not Found', () => pm.response.to.have.status(404));"]
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/cards/does-not-exist/upvote",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "cards", "does-not-exist", "upvote"]
+        }
+      }
+    },
+    {
+      "name": "Pin card — toggle on (200)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('200 OK', () => pm.response.to.have.status(200));",
+              "const c = pm.response.json();",
+              "pm.test('isPinned true, pinnedAt set', () => {",
+              "  pm.expect(c.isPinned).to.eql(true);",
+              "  pm.expect(c.pinnedAt).to.not.eql(null);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/cards/{{cardId}}/pin",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "cards", "{{cardId}}", "pin"]
+        }
+      }
+    },
+    {
+      "name": "Pin card — toggle off (200)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('200 OK', () => pm.response.to.have.status(200));",
+              "const c = pm.response.json();",
+              "pm.test('isPinned false, pinnedAt cleared', () => {",
+              "  pm.expect(c.isPinned).to.eql(false);",
+              "  pm.expect(c.pinnedAt).to.eql(null);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/cards/{{cardId}}/pin",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "cards", "{{cardId}}", "pin"]
+        }
+      }
+    },
+    {
+      "name": "Pin card — missing (404)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": ["pm.test('404 Not Found', () => pm.response.to.have.status(404));"]
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/cards/does-not-exist/pin",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "cards", "does-not-exist", "pin"]
+        }
+      }
+    },
+    {
+      "name": "Delete card (204)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": ["pm.test('204 No Content', () => pm.response.to.have.status(204));"]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/cards/{{cardId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "cards", "{{cardId}}"]
+        }
+      }
+    },
+    {
+      "name": "Delete card — already gone (404)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": ["pm.test('404 Not Found', () => pm.response.to.have.status(404));"]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/cards/{{cardId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "cards", "{{cardId}}"]
+        }
+      }
+    }
+  ]
+}

@@ -4,6 +4,7 @@ import cors from "cors";
 import morgan from "morgan";
 import { errorHandler } from "./middleware/errorHandler.js";
 import boardsRouter from "./routes/boards.js";
+import cardsRouter from "./routes/cards.js";
 
 const app = express();
 const PORT = process.env.PORT ?? 3000;
@@ -18,9 +19,8 @@ app.get("/health", (_req, res) => {
 });
 
 app.use("/api/boards", boardsRouter);
-// Phase 4 (planning.md Section 5 — Enes) will add:
-//   app.use("/api/boards/:boardId/cards", cardsRouter);
-//   app.use("/api/cards", cardsRouter);
+app.use("/api/boards/:boardId/cards", cardsRouter);
+app.use("/api/cards", cardsRouter);
 
 app.use(errorHandler);
 
