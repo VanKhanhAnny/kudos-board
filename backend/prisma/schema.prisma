@@ -10,8 +10,9 @@ generator client {
   provider = "prisma-client-js"
 }
 
-// Connection URL lives in prisma.config.ts (Prisma 7 moved it out of the
-// schema file). See `datasource.url` there.
+// Connection URL lives in prisma.config.ts for the CLI (Prisma 7 removed URL
+// from the schema file). The runtime PrismaClient in src/lib/prisma.js gets
+// the URL via a driver adapter (@prisma/adapter-pg) reading DATABASE_URL.
 datasource db {
   provider = "postgresql"
 }
@@ -27,13 +28,14 @@ model Board {
   title     String
   category  Category
   author    String?
-  imageUrl  String?
+  imageUrl  String
   createdAt DateTime @default(now())
   cards     Card[]
 }
 
 model Card {
   id        String    @id @default(cuid())
+  title     String
   message   String
   gifUrl    String
   author    String?

@@ -3,6 +3,7 @@ import express from "express";
 import cors from "cors";
 import morgan from "morgan";
 import { errorHandler } from "./middleware/errorHandler.js";
+import boardsRouter from "./routes/boards.js";
 
 const app = express();
 const PORT = process.env.PORT ?? 3000;
@@ -16,13 +17,10 @@ app.get("/health", (_req, res) => {
   res.json({ status: "ok" });
 });
 
-// Phase 4 (planning.md Section 5 — Eric):
-// app.use("/api/boards", boardsRouter);
-// app.use("/api/cards", cardsRouter);
-//
-// Phase 4 (planning.md Section 5 — Enes):
-//   - PATCH /api/cards/:id/upvote (mounted via cardsRouter)
-//   - PATCH /api/cards/:id/pin    (mounted via cardsRouter)
+app.use("/api/boards", boardsRouter);
+// Phase 4 (planning.md Section 5 — Enes) will add:
+//   app.use("/api/boards/:boardId/cards", cardsRouter);
+//   app.use("/api/cards", cardsRouter);
 
 app.use(errorHandler);
 
