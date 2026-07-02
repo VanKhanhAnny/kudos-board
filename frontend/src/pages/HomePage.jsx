@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AddButton } from '../components/AddButton'
 import { BoardsSection } from '../components/BoardsSection'
@@ -36,19 +36,25 @@ export function HomePage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [boards, setBoards] = useState(realBoards)
   const [isCreateBoardOpen, setIsCreateBoardOpen] = useState(false)
+  const scrollRestoredRef = useRef(false)
 
   useEffect(() => {
     sessionStorage.setItem(CATEGORY_KEY, selectedCategory)
   }, [selectedCategory])
 
   useEffect(() => {
+    if (scrollRestoredRef.current) return
+    scrollRestoredRef.current = true
+
     if ('scrollRestoration' in window.history) {
       window.history.scrollRestoration = 'manual'
     }
     const savedScroll = sessionStorage.getItem(SCROLL_KEY)
+    sessionStorage.removeItem(SCROLL_KEY)
     if (savedScroll) {
-      window.scrollTo(0, parseInt(savedScroll, 10))
-      sessionStorage.removeItem(SCROLL_KEY)
+      requestAnimationFrame(() => {
+        window.scrollTo(0, parseInt(savedScroll, 10))
+      })
     } else {
       window.scrollTo(0, 0)
     }
