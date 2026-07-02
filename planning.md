@@ -647,16 +647,50 @@ A lightweight checklist that gets ticked off as work progresses (any teammate ca
 **Milestone 2 — Backend (Eric + Enes in parallel after shape-setting handoff)**
 - [x] (Eric) Backend scaffold: npm, Prisma, Express, middleware
 - [x] (Eric) `schema.prisma` + init migration
-- [ ] (Eric) Shape-setting routes: `POST /api/boards`, `GET /api/boards/:id`, `DELETE /api/boards/:id` + Postman tests
-- [ ] (Eric) Handoff signal fires → Enes starts `routes/cards.js`
-- [ ] (Eric) Remaining route: `GET /api/boards` + Postman tests
-- [ ] (Enes) 4 card endpoints + Postman tests
-- [ ] (Enes) `Spec Reconciliation — Backend (Milestone 2)` written
+- [x] (Eric) Shape-setting routes: `POST /api/boards`, `GET /api/boards/:id`, `DELETE /api/boards/:id` + Postman tests
+- [x] (Eric) Handoff signal fires → Enes starts `routes/cards.js`
+- [x] (Eric) Remaining route: `GET /api/boards` + Postman tests
+- [x] (Enes) 4 card endpoints + Postman tests
+- [x] (Enes) `Spec Reconciliation — Backend (Milestone 2)` written
 
 **Milestone 3 — Integration (Anny + Eric)**
 - [ ] Frontend `fetch` calls wired to backend endpoints
 - [ ] CORS verified end-to-end
 - [ ] `Final Spec Reconciliation — Full Pipeline (Milestone 3)` written
+
+---
+
+## Spec Reconciliation — Backend (Milestone 2)
+
+Author: Enes. Written after the four card endpoints landed in `backend/src/routes/cards.js`. Records where the implementation matches the spec and where it deviates, per the Maintenance rule.
+
+### Endpoints delivered
+
+All four card endpoints from Section 5 are implemented in `backend/src/routes/cards.js` and mounted from `backend/src/index.js`:
+
+| Method | Path                           | Status codes verified                     |
+|--------|--------------------------------|-------------------------------------------|
+| POST   | `/api/boards/:boardId/cards`   | 201 happy path, 400 missing field, 404 missing board |
+| DELETE | `/api/cards/:id`               | 204 happy path, 404 missing card          |
+| PATCH  | `/api/cards/:id/upvote`        | 200 happy path, 404 missing card          |
+| PATCH  | `/api/cards/:id/pin`           | 200 toggle on, 200 toggle off, 404 missing card |
+
+### Matches the spec
+
+- Request/response bodies match Section 2 verbatim, including the `title` field added to `Card` in PR #1. `POST` returns the full card with `upvotes: 0`, `isPinned: false`, `pinnedAt: null`.
+- Validation reuses Eric's `requireFields` helper: `["title", "message", "gifUrl"]` are required; `author` is optional and defaults to `null`.
+- Error shape is the uniform `{ "error": "..." }` from the centralized handler.
+- `pin` is a true toggle: it reads the current row, sets `pinnedAt = new Date()` on pin and `null` on unpin, matching the `CardGrid` pinned-ordering contract in Section 4.
+
+### Deviations and decisions
+
+- **Router mounting.** `cards.js` exports `Router({ mergeParams: true })` and is mounted twice: at `/api/boards/:boardId/cards` (so `POST /` sees `req.params.boardId`) and at `/api/cards` (for the `:id` routes). This is exactly the structure prescribed in Section 5, noted here because it is the one non-obvious wiring detail.
+- **404 on missing parent board (POST).** Implemented by catching Prisma's `P2003` foreign-key violation on `create` and rethrowing as `HttpError(404, "Board not found")`, rather than a pre-flight `findUnique`. One round-trip instead of two; the create is still a single statement.
+- **404 mechanism differs by route.** `upvote` and `DELETE` rely on Prisma `P2025` reaching the centralized handler (which returns the generic `"Not found"`). `pin` needs an explicit `findUnique` first because it is a toggle, so it returns the more specific `"Card not found"`. This inconsistency in the 404 message string is intentional and mirrors how `boards.js` mixes both mechanisms.
+
+### How it was verified
+
+Ran against a local Postgres (`kudos_board`) with both migrations applied. Booted the server (`npm run start`), created a board, then exercised each endpoint with `curl` for happy-path plus every 400/404 case in the table above — all returned the expected status and body. The equivalent requests are captured in `backend/postman/cards.postman_collection.json` for repeatable runs (set the `baseUrl`, `boardId`, `cardId` collection variables; run top to bottom).
 
 ---
 
