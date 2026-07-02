@@ -156,8 +156,8 @@ App
 - **Interactions:** none directly (delegates to `CardTile`).
 
 #### `CardTile`
-- **Responsibility:** Single card display with message, gif, upvote count, pin button, delete button.
-- **Renders:** Gif image, message text, optional author, upvote button + count, pin button (filled if pinned), delete button.
+- **Responsibility:** Single card display with title, message, gif, upvote count, pin button, delete button.
+- **Renders:** Gif image, title heading, message text, optional author, upvote button + count, pin button (filled if pinned), delete button.
 - **Props:** `card: Card`, `onUpvote(cardId)`, `onDelete(cardId)`, `onTogglePin(cardId)`.
 - **State:** none.
 - **Interactions:**
@@ -181,16 +181,17 @@ App
 
 #### `CreateCardModal`
 - **Responsibility:** Modal containing a form to create a new card on the current board.
-- **Renders:** Backdrop, form with message textarea, author input (optional), `GiphySearch`, Submit and Cancel buttons.
+- **Renders:** Backdrop, form with title input, message textarea, author input (optional), `GiphySearch`, Submit and Cancel buttons.
 - **Props:** `isOpen: boolean`, `boardId: string`, `onClose()`, `onCardCreated(card)`.
 - **State:**
+  - `title: string`
   - `message: string`
   - `author: string`
   - `selectedGifUrl: string | null`
   - `isSubmitting: boolean`
   - `errorMessage: string | null`
 - **Interactions:**
-  - Form submit (only enabled when `message` and `selectedGifUrl` are set) → `POST /api/boards/:boardId/cards`, on success call `onCardCreated(newCard)` then `onClose()`.
+  - Form submit (only enabled when `title`, `message`, and `selectedGifUrl` are set) → `POST /api/boards/:boardId/cards`, on success call `onCardCreated(newCard)` then `onClose()`.
   - Cancel → `onClose()`.
 
 #### `GiphySearch`
@@ -232,7 +233,6 @@ List boards, with optional filtering and search.
     }
   ]
   ```
-  Note: `imageUrl` is **always non-null** in responses — the server assigns a category-default URL on create if the client doesn't provide one. See Section 3 `Board.imageUrl` notes.
 - **Errors:**
   - `400 Bad Request` — invalid `category` or `filter` value. Body: `{ "error": "Invalid query parameter: ..." }`
   - `500 Internal Server Error` — database failure.
@@ -246,6 +246,7 @@ Create a new board.
   {
     "title": "string (required, 1-100 chars)",
     "category": "CELEBRATION | THANK_YOU | INSPIRATION (required)",
+    "imageUrl": "string (required, valid URL)",
     "author": "string (optional, max 50 chars)"
   }
   ```
@@ -256,13 +257,12 @@ Create a new board.
     "title": "...",
     "category": "...",
     "author": "... | null",
-    "imageUrl": "string (server-assigned if not in request body)",
+    "imageUrl": "string",
     "createdAt": "..."
   }
   ```
-  Note: `imageUrl` is optional in the request body. If the client omits it, the server picks one from a category-default pool and returns it. The response always has a non-null `imageUrl`.
 - **Errors:**
-  - `400 Bad Request` — missing/invalid `title` or `category`. Body: `{ "error": "title is required" }` (or similar).
+  - `400 Bad Request` — missing/invalid `title`, `category`, or `imageUrl`. Body: `{ "error": "title is required" }` (or similar).
   - `500 Internal Server Error`.
 
 ### `GET /api/boards/:id`
@@ -281,6 +281,7 @@ Get a single board with its cards (used by Board Page).
     "cards": [
       {
         "id": "uuid",
+        "title": "...",
         "message": "...",
         "gifUrl": "...",
         "author": "... | null",
@@ -313,6 +314,7 @@ Create a new card on a board.
 - **Request body:**
   ```json
   {
+    "title": "string (required, 1-100 chars)",
     "message": "string (required, 1-500 chars)",
     "gifUrl": "string (required, valid URL)",
     "author": "string (optional, max 50 chars)"
@@ -322,6 +324,7 @@ Create a new card on a board.
   ```json
   {
     "id": "uuid",
+    "title": "...",
     "message": "...",
     "gifUrl": "...",
     "author": "... | null",
@@ -333,7 +336,7 @@ Create a new card on a board.
   }
   ```
 - **Errors:**
-  - `400 Bad Request` — missing/invalid `message` or `gifUrl`.
+  - `400 Bad Request` — missing/invalid `title`, `message`, or `gifUrl`.
   - `404 Not Found` — parent board does not exist.
   - `500 Internal Server Error`.
 
@@ -394,7 +397,7 @@ INSPIRATION
 | `title`     | String     | yes      | —       | 1–100 chars (validated in API layer).         |
 | `category`  | `Category` | yes      | —       | Enum above.                                   |
 | `author`    | String?    | no       | `null`  | Optional creator display name.                |
-| `imageUrl`  | String?    | no       | `null`  | Optional in DB for forward-compatibility, but the `POST /api/boards` handler **always assigns a category-default URL if the client doesn't provide one**, so API responses always include a non-null `imageUrl`. Default URL pool lives in `backend/src/lib/boardImages.js` (added in Phase 4). |
+| `imageUrl`  | String     | yes      | —       | Required in DB and in the `POST /api/boards` request body. Frontend supplies the URL (the "Create Board" form has an image field). |
 | `createdAt` | DateTime   | yes      | `now()` | Used for "Recent" filter and grid ordering.   |
 | `cards`     | `Card[]`   | —        | —       | Relation: one Board has many Cards.           |
 
@@ -403,6 +406,7 @@ INSPIRATION
 | Field       | Type     | Required | Default | Notes                                          |
 |-------------|----------|----------|---------|------------------------------------------------|
 | `id`        | String   | yes      | `cuid()`| Primary key.                                   |
+| `title`     | String   | yes      | —       | 1–100 chars (validated in API layer). Rendered as the card headline in `CardTile`. |
 | `message`   | String   | yes      | —       | 1–500 chars (validated in API layer).          |
 | `gifUrl`    | String   | yes      | —       | GIPHY URL chosen by the user.                  |
 | `author`    | String?  | no       | `null`  | Optional creator display name.                 |
@@ -474,6 +478,7 @@ Note: `inputValue` is the *uncommitted* input field value. It only becomes the c
 
 | State variable    | Type             | Initial value | Owner             | Update trigger                                  |
 |-------------------|------------------|---------------|-------------------|-------------------------------------------------|
+| `title`           | `string`         | `""`          | `CreateCardModal` | Every keystroke in title input.                 |
 | `message`         | `string`         | `""`          | `CreateCardModal` | Every keystroke in message textarea.            |
 | `author`          | `string`         | `""`          | `CreateCardModal` | Every keystroke in author input.                |
 | `selectedGifUrl`  | `string \| null` | `null`        | `CreateCardModal` | `GiphySearch` calls `onSelectGif(url)`.         |
@@ -529,7 +534,7 @@ Anny owns the entire frontend deliverable. From Sections 1 and 4, that includes:
 
 **Coordination notes (from Anny's frontend summary, Jun 30):**
 - Backend will run on `http://localhost:3000`. When wiring up real fetch calls in Milestone 3, Anny should set `VITE_API_BASE_URL=http://localhost:3000` in `frontend/.env` and read it via `import.meta.env.VITE_API_BASE_URL`.
-- Anny's current `Header` component shows **log in / register buttons that aren't wired**. User Accounts is out of scope for this version of the spec; the backend will not provide `/api/auth/*` endpoints. Anny should hide or stub those buttons before submission (or move them into a stretch-feature spec update if the team takes on auth later).
+- Anny's `Header` component shows **log in / register buttons that intentionally aren't wired**. User Accounts is out of scope for this version of the spec; the backend will not provide `/api/auth/*` endpoints. The buttons stay visible as visual placeholders — they're deliberately no-ops.
 - Vite's default dev port is `5173`. The backend's CORS middleware allows that origin via the `FRONTEND_ORIGIN` env var; if Anny ever runs Vite on a non-default port, update both `.env` files.
 - Anny's `mockBoards` currently has shape `{ id, title, imageUrl }` — this is a strict subset of what `GET /api/boards` returns. She'll need `category` (for the nav tabs to filter) and `createdAt` (for the Recent tab) when she wires the real endpoint.
 
@@ -604,7 +609,7 @@ Concrete green-light: Enes pulls `main` and starts `backend/src/routes/cards.js`
 1. `backend/prisma/schema.prisma` matches Section 3 and the init migration is applied. *(merged Jun 30)*
 2. `backend/src/index.js` boots cleanly with CORS, JSON parsing, and the error-handler middleware. *(merged Jun 30)*
 3. Eric has landed three shape-setting routes in `backend/src/routes/boards.js`, each with passing Postman tests:
-   - `POST /api/boards` — establishes the validation-via-`requireFields` + defaults + 201-with-full-body pattern that Enes reuses for `POST /api/boards/:boardId/cards`.
+   - `POST /api/boards` — establishes the validation-via-`requireFields` + 201-with-full-body pattern that Enes reuses for `POST /api/boards/:boardId/cards`.
    - `GET /api/boards/:id` — establishes the fetch-then-404 pattern that Enes reuses in his two PATCH routes (both need to 404 on missing card before mutating).
    - `DELETE /api/boards/:id` — establishes the delete + 204 No Content pattern (P2025 caught by centralized error handler) that Enes reuses for `DELETE /api/cards/:id`.
 
