@@ -1,9 +1,21 @@
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api'
 
+// Token storage lives here so every request can pick it up without each
+// caller having to pass it. AuthContext writes to this same key on login
+// and clears it on logout.
+export const TOKEN_STORAGE_KEY = 'kudos:auth:token'
+
 async function request(path, options = {}) {
+  const token = localStorage.getItem(TOKEN_STORAGE_KEY)
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(options.headers ?? {}),
+  }
+
   const res = await fetch(`${BASE_URL}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
     ...options,
+    headers,
   })
 
   if (!res.ok) {
@@ -15,11 +27,30 @@ async function request(path, options = {}) {
   return res.json()
 }
 
-export function getBoards({ category, filter, search } = {}) {
+export function registerUser({ username, email, password }) {
+  return request('/auth/register', {
+    method: 'POST',
+    body: JSON.stringify({ username, email, password }),
+  })
+}
+
+export function loginUser({ username, password }) {
+  return request('/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ username, password }),
+  })
+}
+
+export function getMe() {
+  return request('/auth/me')
+}
+
+export function getBoards({ category, filter, search, mine } = {}) {
   const params = new URLSearchParams()
   if (category && category !== 'all') params.set('category', category)
   if (filter) params.set('filter', filter)
   if (search) params.set('search', search)
+  if (mine) params.set('mine', 'true')
   const qs = params.toString()
   return request(`/boards${qs ? `?${qs}` : ''}`)
 }

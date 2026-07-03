@@ -56,6 +56,24 @@
   margin: 4px 0 0;
 }
 
+.board-page__author {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 300;
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.55) !important;
+  margin: 8px 0 0;
+}
+
+.board-page__error {
+  text-align: center;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+  font-size: 14px;
+  color: rgba(220, 38, 38, 0.9) !important;
+  margin: 0 auto 8px;
+  padding: 0 24px;
+}
+
 .board-page__cta {
   margin-top: 28px;
 }

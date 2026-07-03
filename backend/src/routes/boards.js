@@ -1,6 +1,8 @@
 import { Router } from "express";
 import { prisma } from "../lib/prisma.js";
 import { requireFields } from "../middleware/validate.js";
+import { requireAuth } from "../middleware/requireAuth.js";
+import { optionalAuth } from "../middleware/optionalAuth.js";
 import { HttpError } from "../middleware/errorHandler.js";
 
 const VALID_CATEGORIES = ["CELEBRATION", "THANK_YOU", "INSPIRATION"];
@@ -15,11 +17,16 @@ const router = Router();
  *   category  — one of VALID_CATEGORIES
  *   filter    — "recent" (ignores category if both are set; still respects search)
  *   search    — case-insensitive substring match on title
+ *   mine      — "true" restricts to boards owned by the caller (requires auth)
  *
  * No params: return everything, newest first.
+ *
+ * `optionalAuth` runs on every GET so we can pick up req.user when the
+ * caller sent a token; we only 401 if `mine=true` was requested WITHOUT
+ * a valid token attached.
  */
-router.get("/", async (req, res) => {
-  const { category, filter, search } = req.query;
+router.get("/", optionalAuth, async (req, res) => {
+  const { category, filter, search, mine } = req.query;
 
   if (category !== undefined && !VALID_CATEGORIES.includes(category)) {
     throw new HttpError(
@@ -33,6 +40,9 @@ router.get("/", async (req, res) => {
       `Invalid query parameter: filter must be one of ${VALID_FILTERS.join(", ")}`,
     );
   }
+  if (mine === "true" && !req.user) {
+    throw new HttpError(401, "Must be logged in to view your boards");
+  }
 
   const where = {};
   if (filter !== "recent" && category) {
@@ -40,6 +50,9 @@ router.get("/", async (req, res) => {
   }
   if (search) {
     where.title = { contains: search, mode: "insensitive" };
+  }
+  if (mine === "true") {
+    where.authorId = req.user.id;
   }
 
   const boards = await prisma.board.findMany({
@@ -55,8 +68,10 @@ router.get("/", async (req, res) => {
  * POST /api/boards
  * Body: { title, category, imageUrl, author? }
  * All three non-author fields are required (see planning.md §2, §3).
+ * Requires auth: the created row is stamped with req.user.id so we can
+ * enforce ownership on delete and support the "my boards" filter.
  */
-router.post("/", async (req, res) => {
+router.post("/", requireAuth, async (req, res) => {
   requireFields(req.body, ["title", "category", "imageUrl"]);
   const { title, category, imageUrl, author } = req.body;
 
@@ -73,6 +88,7 @@ router.post("/", async (req, res) => {
       category,
       imageUrl,
       author: author ?? null,
+      authorId: req.user.id,
     },
   });
 
@@ -100,11 +116,26 @@ router.get("/:id", async (req, res) => {
 /*
  * DELETE /api/boards/:id
  * Cards cascade-delete via the FK (see schema.prisma).
- * If the board doesn't exist Prisma throws P2025, which the centralized
- * errorHandler translates into a 404 — no explicit fetch-then-check needed.
+ * Rules (per user-ownership-scope plan):
+ *   - Must be logged in.
+ *   - Owned board: only the owner may delete.
+ *   - Orphan board (authorId === null): any logged-in user may delete.
+ * We fetch first to enforce ownership; that fetch also gives us the 404
+ * for free instead of letting Prisma's P2025 bubble up.
  */
-router.delete("/:id", async (req, res) => {
-  await prisma.board.delete({ where: { id: req.params.id } });
+router.delete("/:id", requireAuth, async (req, res) => {
+  const board = await prisma.board.findUnique({
+    where: { id: req.params.id },
+    select: { id: true, authorId: true },
+  });
+  if (!board) {
+    throw new HttpError(404, "Board not found");
+  }
+  if (board.authorId && board.authorId !== req.user.id) {
+    throw new HttpError(403, "You do not own this board");
+  }
+
+  await prisma.board.delete({ where: { id: board.id } });
   res.status(204).end();
 });
 

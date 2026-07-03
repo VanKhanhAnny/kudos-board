@@ -1,7 +1,11 @@
+import { useAuth } from '../../context/AuthContext'
+import { canDeleteRow } from '../../lib/permissions'
 import { CardTile } from '../CardTile'
 import './CardGrid.css'
 
 export function CardGrid({ cards, onUpvote, onDelete }) {
+  const { user } = useAuth()
+
   if (cards.length === 0) {
     return (
       <p className="card-grid__empty">No cards yet. Be the first to add one.</p>
@@ -16,6 +20,7 @@ export function CardGrid({ cards, onUpvote, onDelete }) {
           card={card}
           onUpvote={onUpvote}
           onDelete={onDelete}
+          canDelete={canDeleteRow(user, card)}
         />
       ))}
     </div>

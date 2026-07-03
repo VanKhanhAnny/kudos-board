@@ -109,3 +109,12 @@
   letter-spacing: -0.01em;
   line-height: 1.25;
 }
+
+.board-card__author {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 300;
+  font-style: italic;
+  color: rgba(26, 26, 26, 0.5);
+  margin: 0;
+}

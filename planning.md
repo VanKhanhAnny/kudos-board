@@ -1,6 +1,6 @@
 # Kudos Board — Project Specification
 
-This document is the spec the rest of the project implements against. Scope: all CORE features from `README.md` plus two stretch features (Pinned Cards and Dark Mode). User Accounts and Comments are out of scope for this version of the spec.
+This document is the spec the rest of the project implements against. Scope: all CORE features from `README.md` plus User Accounts. Comments and Dark Mode are out of scope. Pinned Cards was in scope originally — the backend was built and later removed. User Accounts was originally out of scope and was added afterwards. See the two "Spec change" notes below for both.
 
 **Stack:** Vite + React + React Router (frontend), Express + Prisma + PostgreSQL (backend), GIPHY API (external).
 
@@ -139,7 +139,6 @@ App
   - Card created → prepend to `cards`, close modal.
   - Card deleted → remove from `cards`.
   - Card upvoted → update that card's `upvotes` in `cards`.
-  - Card pinned/unpinned → update that card's `isPinned` + `pinnedAt`, re-sort.
 
 #### `BoardPageHeader`
 - **Responsibility:** Shows board title, category, author, and a back link.
@@ -149,20 +148,19 @@ App
 - **Interactions:** Back link → navigate to `/`.
 
 #### `CardGrid`
-- **Responsibility:** Lays out cards in a grid, with pinned cards sorted to the front (most-recently pinned first), then non-pinned by `createdAt` descending.
+- **Responsibility:** Lays out cards in a grid, ordered by `createdAt` descending.
 - **Renders:** A grid of `CardTile` components, or an empty-state message.
-- **Props:** `cards: Card[]`, `onUpvote(cardId)`, `onDelete(cardId)`, `onTogglePin(cardId)`.
-- **State:** none (sorting derived inside render from props).
+- **Props:** `cards: Card[]`, `onUpvote(cardId)`, `onDelete(cardId)`.
+- **State:** none.
 - **Interactions:** none directly (delegates to `CardTile`).
 
 #### `CardTile`
-- **Responsibility:** Single card display with title, message, gif, upvote count, pin button, delete button.
-- **Renders:** Gif image, title heading, message text, optional author, upvote button + count, pin button (filled if pinned), delete button.
-- **Props:** `card: Card`, `onUpvote(cardId)`, `onDelete(cardId)`, `onTogglePin(cardId)`.
+- **Responsibility:** Single card display with title, message, gif, upvote count, delete button.
+- **Renders:** Gif image, title heading, message text, optional author, upvote button + count, delete button.
+- **Props:** `card: Card`, `onUpvote(cardId)`, `onDelete(cardId)`.
 - **State:** none.
 - **Interactions:**
   - Upvote click → `onUpvote(card.id)`.
-  - Pin click → `onTogglePin(card.id)`.
   - Delete click → confirm, then `onDelete(card.id)`.
 
 #### `CreateBoardModal`
@@ -286,8 +284,6 @@ Get a single board with its cards (used by Board Page).
         "gifUrl": "...",
         "author": "... | null",
         "upvotes": 0,
-        "isPinned": false,
-        "pinnedAt": null,
         "createdAt": "...",
         "boardId": "uuid"
       }
@@ -329,8 +325,6 @@ Create a new card on a board.
     "gifUrl": "...",
     "author": "... | null",
     "upvotes": 0,
-    "isPinned": false,
-    "pinnedAt": null,
     "createdAt": "...",
     "boardId": "uuid"
   }
@@ -355,16 +349,6 @@ Increment a card's upvote count by 1.
 
 - **Request body:** none (or empty `{}`).
 - **Success — 200 OK:** returns the updated card (same shape as in `GET /boards/:id`).
-- **Errors:**
-  - `404 Not Found` — card does not exist.
-  - `500 Internal Server Error`.
-
-### `PATCH /api/cards/:id/pin`
-
-Toggle a card's pinned state. If pinning, sets `isPinned = true` and `pinnedAt = now`. If unpinning, sets `isPinned = false` and `pinnedAt = null`.
-
-- **Request body:** none.
-- **Success — 200 OK:** returns the updated card.
 - **Errors:**
   - `404 Not Found` — card does not exist.
   - `500 Internal Server Error`.
@@ -411,8 +395,6 @@ INSPIRATION
 | `gifUrl`    | String   | yes      | —       | GIPHY URL chosen by the user.                  |
 | `author`    | String?  | no       | `null`  | Optional creator display name.                 |
 | `upvotes`   | Int      | yes      | `0`     | Incremented by upvote endpoint.                |
-| `isPinned`  | Boolean  | yes      | `false` | Toggled by pin endpoint.                       |
-| `pinnedAt`  | DateTime?| no       | `null`  | Set when pinned, cleared when unpinned. Drives pinned-ordering. |
 | `createdAt` | DateTime | yes      | `now()` | Used for default ordering.                     |
 | `boardId`   | String   | yes      | —       | Foreign key → `Board.id`.                      |
 | `board`     | `Board`  | —        | —       | Relation: `@relation(fields: [boardId], references: [id], onDelete: Cascade)`. Deleting a board deletes its cards. |
@@ -471,7 +453,7 @@ Note: `inputValue` is the *uncommitted* input field value. It only becomes the c
 | State variable          | Type            | Initial value | Owner       | Update trigger                                                              |
 |-------------------------|-----------------|---------------|-------------|-----------------------------------------------------------------------------|
 | `board`                 | `Board \| null` | `null`        | `BoardPage` | Fetched on mount / when `boardId` URL param changes.                        |
-| `cards`                 | `Card[]`        | `[]`          | `BoardPage` | Set from initial fetch; mutated by create/delete/upvote/pin callbacks.      |
+| `cards`                 | `Card[]`        | `[]`          | `BoardPage` | Set from initial fetch; mutated by create/delete/upvote callbacks.          |
 | `isCreateCardModalOpen` | `boolean`       | `false`       | `BoardPage` | "Create Card" button click (open); modal close or successful create (close).|
 
 ### `CreateCardModal`
@@ -495,7 +477,7 @@ Note: `inputValue` is the *uncommitted* input field value. It only becomes the c
 
 ### Derived (not stored as state)
 
-- **Sorted card list** in `CardGrid`: derived inside render from `cards` prop. Pinned cards first, ordered by `pinnedAt` descending; then unpinned cards, ordered by `createdAt` descending.
+- **Sorted card list** in `CardGrid`: derived inside render from `cards` prop. Ordered by `createdAt` descending.
 - **Filtered/searched board list**: NOT derived on the frontend. Filtering and search are pushed to the backend via `GET /api/boards` query params, so what comes back is already the right set.
 
 ---
@@ -574,7 +556,6 @@ Enes inherits a working Express app with schema and middleware already merged on
 | POST   | `/api/boards/:boardId/cards`      | Validates `message` + `gifUrl` required; 404 if parent board missing                |
 | DELETE | `/api/cards/:id`                  | 404 if card missing                                                                 |
 | PATCH  | `/api/cards/:id/upvote`           | `prisma.card.update({ data: { upvotes: { increment: 1 } } })`                       |
-| PATCH  | `/api/cards/:id/pin`              | Fetch card, toggle `isPinned`, set `pinnedAt = new Date()` on pin / `null` on unpin |
 
 **Router structure:** `cards.js` exports an `express.Router({ mergeParams: true })`. `index.js` mounts it twice: at `/api/boards/:boardId/cards` (so `POST /` inside the router resolves to the create-card contract and `req.params.boardId` is populated) and at `/api/cards` (for the DELETE + two PATCH routes). Inside the router, use `:id` for the card id and rely on the mount path to distinguish.
 
@@ -636,12 +617,12 @@ A lightweight checklist that gets ticked off as work progresses (any teammate ca
 - [x] Repo initialized with `frontend/` and `backend/` directories
 - [x] `planning.md` Sections 1–4 drafted
 - [x] `planning.md` Section 5 (this section) drafted
-- [ ] `planning.md` committed to `main`
+- [x] `planning.md` committed to `main`
 
 **Milestone 1 — Frontend (Anny)**
-- [ ] Figma mockups finalized
-- [ ] Vite + React Router scaffolded
-- [ ] Components implemented per Section 1
+- [x] Figma mockups finalized
+- [x] Vite + React Router scaffolded
+- [x] Components implemented per Section 1
 - [ ] `Decisions Log — Frontend (Milestone 1)` written
 
 **Milestone 2 — Backend (Eric + Enes in parallel after shape-setting handoff)**
@@ -654,9 +635,9 @@ A lightweight checklist that gets ticked off as work progresses (any teammate ca
 - [x] (Enes) `Spec Reconciliation — Backend (Milestone 2)` written
 
 **Milestone 3 — Integration (Anny + Eric)**
-- [ ] Frontend `fetch` calls wired to backend endpoints
-- [ ] CORS verified end-to-end
-- [ ] `Final Spec Reconciliation — Full Pipeline (Milestone 3)` written
+- [x] Frontend `fetch` calls wired to backend endpoints
+- [x] CORS verified end-to-end
+- [x] `Final Spec Reconciliation — Full Pipeline (Milestone 3)` written
 
 ---
 
@@ -693,6 +674,115 @@ All four card endpoints from Section 5 are implemented in `backend/src/routes/ca
 Ran against a local Postgres (`kudos_board`) with both migrations applied. Booted the server (`npm run start`), created a board, then exercised each endpoint with `curl` for happy-path plus every 400/404 case in the table above — all returned the expected status and body. The equivalent requests are captured in `backend/postman/cards.postman_collection.json` for repeatable runs (set the `baseUrl`, `boardId`, `cardId` collection variables; run top to bottom).
 
 ---
+
+## Final Spec Reconciliation — Full Pipeline (Milestone 3)
+
+Author: Eric. Written after wiring `frontend/src/lib/api.js` into every page and modal that previously used mock data. Cross-layer audit — Section 2 contracts vs Express routes vs frontend fetch calls.
+
+### Frontend fetch calls verified against API contracts
+
+All seven core CRUD endpoints are called by the frontend and return the shape documented in Section 2.
+
+| Frontend caller                                     | Endpoint hit                          | Match?                                   |
+|-----------------------------------------------------|---------------------------------------|------------------------------------------|
+| `HomePage` useEffect (on mount + category/search)   | `GET /api/boards` + query params      | ✅ request + response shape match spec   |
+| `CreateBoardModal.handleSubmit`                     | `POST /api/boards`                    | ✅ 201 with full body used to prepend    |
+| `BoardCard` delete (via `HomePage.handleDeleteBoard`) | `DELETE /api/boards/:id`            | ✅ 204 → local filter                    |
+| `BoardPage` useEffect                               | `GET /api/boards/:id`                 | ✅ `{ ...board, cards: [...] }` unpacked |
+| `CreateCardModal.handleSubmit`                      | `POST /api/boards/:boardId/cards`     | ✅ 201 with full body used to prepend    |
+| `CardTile` upvote (via `BoardPage.handleUpvote`)    | `PATCH /api/cards/:id/upvote`         | ✅ server-truth spliced back (no +1 drift) |
+| `CardTile` delete (via `BoardPage.handleDelete`)    | `DELETE /api/cards/:id`               | ✅ 204 → local filter                    |
+
+### Integration gaps found and resolved
+
+- **Stale Prisma client.** `schema.prisma` had `Card.title` (from the Jul 1 migration) but `node_modules/.prisma/client/` was generated before that migration and rejected the field at runtime with a `PrismaClientValidationError`. Resolved by running `prisma generate` after `prisma migrate deploy`. Added `prisma generate` to the sync step of the integration playbook so this doesn't repeat.
+- **`SearchBar` missing submit button.** README rubric requires a visible Submit/Search button; the component only handled Enter-key submit. Added a `<button type="submit">search</button>` next to the input, styled with the same pill vocabulary as the other buttons. Existing Enter-key path unchanged.
+- **`BoardCard` missing optional author.** Section 1 lists `optional author` in the render list; the initial implementation only rendered `category + title`. Added a `.board-card__author` line under the title, styled to match `CardTile`'s author line.
+- **Local `main` was 22 commits behind origin.** Eric had been working on `backend/boards-routes`; fast-forwarded before integration. No merge conflicts.
+- **Nested `<form>` in `GiphySearch` closed `CreateCardModal` on every click.** `GiphySearch` rendered its own `<form onSubmit={runSearch}>` while sitting inside `CreateCardModal`'s outer `<form onSubmit={handleSubmit}>`. Nested forms are invalid HTML; clicking the inner `type="submit"` button submitted the outer form (React logs `<form> cannot be a descendant of <form>`) and the resulting page reload reset `isCreateCardOpen` to `false`. Replaced the inner `<form>` with a `<div>`, kept Enter-to-search on the input via `onKeyDown`, and set the button to `type="button"`.
+- **Broken image URLs showed a blank spot.** `BoardCard` and `CardTile` rendered `<img src>` with no fallback, so any board/card whose `imageUrl`/`gifUrl` 404s displayed nothing. Added an `onError` handler that swaps in an inline SVG placeholder saying "image unavailable".
+- **GIPHY integration.** Wired `GiphySearch` to `https://api.giphy.com/v1/gifs/{trending,search}` directly from the browser per Section 1, using `VITE_GIPHY_API_KEY` from `frontend/.env.local` (gitignored). Trending is fetched on mount to give the picker something to show without typing; search runs on button click or Enter. Real GIPHY CDN URLs are what get saved to `Card.gifUrl` and animate in `CardTile`. Backend proxy is intentionally not built (`frontend-planning.md §5.2` reference is stale).
+
+### Intentional divergences (deferred, not gaps)
+
+- **`Header` rendered per-page instead of above `<Routes>`.** Section 1 puts `Header` at the App level. Anny's implementation mounts `<Header />` inside each page (`HomePage.jsx`, `BoardPage.jsx`) instead. Functionally equivalent; kept per-page.
+- **Length/URL validation.** Section 2 specifies length limits (title 1–100, message 1–500, author max 50) and "valid URL" for image/gif fields. `requireFields` only checks presence. Rubric doesn't require the limits, so deferred.
+
+### Deferred stretch features (chosen not to implement)
+
+- **Pinned Cards.** Cut. Backend endpoint (`PATCH /api/cards/:id/pin`) and schema fields (`isPinned`, `pinnedAt`) were built during Milestone 2 (see Enes's reconciliation above) but were later removed — see the "Spec change — Pinned Cards removed" note at the bottom of this file. Frontend UI was never built.
+- **Dark Mode.** No `ThemeProvider` or `DarkModeToggle` built. Section 1 references stay in the spec as future work.
+- **User Accounts.** Out of scope per Section 5. `Header` still shows `log in` / `register` buttons as visual placeholders; they route to `LoginPage` / `SignupPage` which are Anny's design stubs — no backend auth exists.
+
+### State architecture verified
+
+State variables in Section 4 match the implementation, with the following additions from integration work:
+
+- `HomePage`: added `isLoading` and `error` state for the fetch lifecycle. Deleted `filterBoards` — filtering pushed to the server.
+- `BoardPage`: added `isLoading`, `notFound`, and `error` state. `board` and `cards` now sourced from `GET /api/boards/:id` instead of mock imports.
+- `CreateBoardModal` and `CreateCardModal`: added `isSubmitting` state (already promised in `frontend-planning.md §4`, now real).
+
+### Final code-spec parity assessment
+
+Section 2 (API contracts) and Section 3 (schema) fully match the implementation. Section 1 (components) matches with the divergences noted above (per-page `Header`, no `ThemeProvider`/`DarkModeToggle`). Section 4 (state) matches with the small additions listed above. The core feature checklist in `README.md` is fully covered; Dark Mode remains a deferred stretch feature.
+
+---
+
+## Spec change — Pinned Cards removed
+
+Cut on 2026-07-02. The `PATCH /api/cards/:id/pin` route, the `isPinned` / `pinnedAt` columns on `Card`, and the frontend hooks that referenced them are all gone. Migration `20260703005907_drop_card_pin` drops the two columns. Enes's Milestone 2 reconciliation above is preserved verbatim because it accurately describes what shipped at the time; the current spec (Sections 1–5) no longer mentions pin.
+
+## Spec change — User Accounts added
+
+Added on 2026-07-02. User Accounts started as an out-of-scope stretch feature (see the Milestone 3 reconciliation above) but was subsequently built rather than restate Sections 1–3 for a feature that landed after the original spec froze, this section records what was added. Source-of-truth is the code.
+
+### Schema (see `backend/prisma/schema.prisma` and migrations `20260702212419_add_user`, `20260702235219_add_ownership`)
+
+New model `User`:
+
+| Field          | Type     | Required | Default | Notes                             |
+|----------------|----------|----------|---------|-----------------------------------|
+| `id`           | String   | yes      | `cuid()`| Primary key.                      |
+| `username`     | String   | yes      | —       | Unique.                           |
+| `email`        | String   | yes      | —       | Unique.                           |
+| `passwordHash` | String   | yes      | —       | bcrypt hash (cost 10).            |
+| `createdAt`    | DateTime | yes      | `now()` |                                   |
+
+Added to `Board` and `Card`: nullable `authorId` (FK → `User.id`, `onDelete: SetNull`). Nullable is intentional — orphaned rows survive when their author's account is deleted, and anonymous cards remain supported.
+
+### API endpoints
+
+New router `backend/src/routes/auth.js` mounted at `/api/auth`:
+
+- `POST /api/auth/register` — Body: `{ username, email, password }`. 201 → `{ user, token }`. 400 on missing fields or password < 8 chars. 409 on username/email already in use.
+- `POST /api/auth/login` — Body: `{ username, password }`. 200 → `{ user, token }`. 401 on either wrong username OR wrong password (deliberately indistinguishable so usernames can't be enumerated).
+- `GET /api/auth/me` — Requires bearer token. 200 → `{ user }`. 401 if the token is missing/invalid/expired or the user no longer exists.
+
+`user` shape returned by all three: `{ id, username, email, createdAt }` — `passwordHash` is never exposed. Token is a JWT signed with `JWT_SECRET` (env var, added to `.env.example`), TTL 7 days.
+
+### Authentication on existing routes
+
+| Route                              | Auth       | Notes                                                                 |
+|------------------------------------|------------|-----------------------------------------------------------------------|
+| `GET /api/boards`                  | optional   | Adds `?mine=true` query param — 401 if `mine=true` without valid token; otherwise ignores auth. |
+| `POST /api/boards`                 | required   | Stamps `authorId = req.user.id` on the new board.                     |
+| `GET /api/boards/:id`              | none       | Unchanged.                                                            |
+| `DELETE /api/boards/:id`           | required   | 403 if `board.authorId` set and ≠ `req.user.id`. Orphan boards (`authorId === null`) are deletable by any logged-in user. |
+| `POST /api/boards/:boardId/cards`  | optional   | If token present, stamps `authorId`; anonymous cards still allowed.   |
+| `DELETE /api/cards/:id`            | required   | Same ownership rule as boards.                                        |
+| `PATCH /api/cards/:id/upvote`      | none       | Unchanged.                                                            |
+
+### Frontend
+
+- `src/context/AuthContext.jsx` — owns `user` + `token`; rehydrates on mount via `GET /api/auth/me`; exposes `login`, `register`, `logout`.
+- `src/pages/LoginPage.jsx`, `src/pages/SignupPage.jsx` — the previously stubbed "log in / register" placeholders are now real.
+- `src/lib/permissions.js` — `canDeleteRow(user, row)` mirrors the backend ownership rule so the delete button doesn't show up on rows the user can't actually delete.
+- `HomePage` — hides "Add a new board" unless logged in; adds a "mine" tab to `CategoryFilter` that maps to `?mine=true`; falls back to "all" if the user logs out while on that tab.
+- `Header` — swaps between "log in / register" and "logged in as X / log out".
+
+### Env vars added
+
+`.env.example` documents `JWT_SECRET` (backend) alongside the existing `DATABASE_URL`, `FRONTEND_ORIGIN`, `PORT`.
 
 ## Maintenance rule
 

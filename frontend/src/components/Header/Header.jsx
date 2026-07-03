@@ -1,14 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link } from 'react-router-dom'
+import { useAuth } from '../../context/AuthContext'
 import './Header.css'
 
-const MOCK_USERNAME = 'Anny'
-
 export function Header() {
-  const [params] = useSearchParams()
-  const navigate = useNavigate()
-  const location = useLocation()
-  const isLoggedIn = params.get('logged-in') === 'true'
+  const { user, logout } = useAuth()
+  const isLoggedIn = Boolean(user)
 
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const wrapRef = useRef(null)
@@ -26,10 +23,7 @@ export function Header() {
 
   const handleSignOut = () => {
     setIsMenuOpen(false)
-    const nextParams = new URLSearchParams(params)
-    nextParams.delete('logged-in')
-    const search = nextParams.toString()
-    navigate(`${location.pathname}${search ? `?${search}` : ''}`)
+    logout()
   }
 
   return (
@@ -41,7 +35,7 @@ export function Header() {
             className="header__greeting"
             onClick={() => setIsMenuOpen((prev) => !prev)}
           >
-            Hi {MOCK_USERNAME}!
+            Hi {user.username}!
           </button>
           {isMenuOpen && (
             <div className="header__menu">

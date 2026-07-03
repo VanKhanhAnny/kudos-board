@@ -1,6 +1,8 @@
 import { Router } from "express";
 import { prisma } from "../lib/prisma.js";
 import { requireFields } from "../middleware/validate.js";
+import { requireAuth } from "../middleware/requireAuth.js";
+import { optionalAuth } from "../middleware/optionalAuth.js";
 import { HttpError } from "../middleware/errorHandler.js";
 
 /*
@@ -15,10 +17,15 @@ const router = Router({ mergeParams: true });
  * POST /api/boards/:boardId/cards
  * Body: { title, message, gifUrl, author? }
  * The three non-author fields are required (see planning.md §2, §3).
+ *
+ * Uses optionalAuth: anyone can create a card (anonymous cards are allowed),
+ * but if a valid token is present the card is credited to that user via
+ * authorId — used later for ownership-scoped delete.
+ *
  * 404 if the parent board does not exist: Prisma raises P2003 (foreign key
  * violation) on create, which we translate into a 404 rather than a 500.
  */
-router.post("/", async (req, res) => {
+router.post("/", optionalAuth, async (req, res) => {
   requireFields(req.body, ["title", "message", "gifUrl"]);
   const { title, message, gifUrl, author } = req.body;
 
@@ -30,6 +37,7 @@ router.post("/", async (req, res) => {
         gifUrl,
         author: author ?? null,
         boardId: req.params.boardId,
+        authorId: req.user?.id ?? null,
       },
     });
     res.status(201).json(card);
@@ -43,11 +51,24 @@ router.post("/", async (req, res) => {
 
 /*
  * DELETE /api/cards/:id
- * If the card doesn't exist Prisma throws P2025, which the centralized
- * errorHandler turns into a 404 — same pattern as DELETE /api/boards/:id.
+ * Same ownership rules as DELETE /api/boards/:id:
+ *   - Must be logged in.
+ *   - Owned card: only the owner may delete.
+ *   - Orphan card (authorId === null): any logged-in user may delete.
  */
-router.delete("/:id", async (req, res) => {
-  await prisma.card.delete({ where: { id: req.params.id } });
+router.delete("/:id", requireAuth, async (req, res) => {
+  const card = await prisma.card.findUnique({
+    where: { id: req.params.id },
+    select: { id: true, authorId: true },
+  });
+  if (!card) {
+    throw new HttpError(404, "Card not found");
+  }
+  if (card.authorId && card.authorId !== req.user.id) {
+    throw new HttpError(403, "You do not own this card");
+  }
+
+  await prisma.card.delete({ where: { id: card.id } });
   res.status(204).end();
 });
 
@@ -60,27 +81,6 @@ router.patch("/:id/upvote", async (req, res) => {
   const updated = await prisma.card.update({
     where: { id: req.params.id },
     data: { upvotes: { increment: 1 } },
-  });
-  res.json(updated);
-});
-
-/*
- * PATCH /api/cards/:id/pin
- * Toggles the pinned state. Because it's a toggle we read the row first to
- * decide the next state; that fetch also gives us the 404 check for free.
- */
-router.patch("/:id/pin", async (req, res) => {
-  const card = await prisma.card.findUnique({ where: { id: req.params.id } });
-  if (!card) {
-    throw new HttpError(404, "Card not found");
-  }
-
-  const updated = await prisma.card.update({
-    where: { id: card.id },
-    data: {
-      isPinned: !card.isPinned,
-      pinnedAt: card.isPinned ? null : new Date(),
-    },
   });
   res.json(updated);
 });
