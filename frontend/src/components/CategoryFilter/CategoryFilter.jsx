@@ -8,10 +8,13 @@ const CATEGORIES = [
   { value: 'INSPIRATION', label: 'Inspiration' },
 ]
 
-export function CategoryFilter({ selectedCategory, onSelectCategory }) {
+const MINE_TAB = { value: 'mine', label: 'My Boards' }
+
+export function CategoryFilter({ selectedCategory, onSelectCategory, showMine = false }) {
+  const tabs = showMine ? [...CATEGORIES, MINE_TAB] : CATEGORIES
   return (
     <div className="category-filter">
-      {CATEGORIES.map((cat) => (
+      {tabs.map((cat) => (
         <button
           key={cat.value}
           type="button"

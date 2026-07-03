@@ -2,19 +2,22 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { AuthLayout } from '../components/AuthLayout'
 import { IconField } from '../components/IconField'
+import { useAuth } from '../context/AuthContext'
 import userIcon from '../assets/icons/username.png'
 import mailIcon from '../assets/icons/mail.png'
 import '../components/_shared/AuthForm.css'
 
 export function SignupPage() {
   const navigate = useNavigate()
+  const { register } = useAuth()
   const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     if (!username.trim() || !email.trim() || !password || !confirmPassword) {
       setError('Please fill in every field.')
@@ -24,8 +27,16 @@ export function SignupPage() {
       setError('Passwords do not match.')
       return
     }
-    // TODO: replace with real POST /auth/register when backend is ready.
-    navigate('/')
+    setError(null)
+    setIsSubmitting(true)
+    try {
+      await register({ username: username.trim(), email: email.trim(), password })
+      navigate('/')
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -68,7 +79,9 @@ export function SignupPage() {
 
         <div className="auth-form__divider" />
 
-        <button type="submit" className="auth-form__submit">register</button>
+        <button type="submit" className="auth-form__submit" disabled={isSubmitting}>
+          {isSubmitting ? 'registering…' : 'register'}
+        </button>
 
         <div className="auth-form__footer">
           <p className="auth-form__footer-text">Already have an account?</p>

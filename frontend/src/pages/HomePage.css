@@ -30,3 +30,12 @@
 .home-page__controls .category-filter {
   padding: 0;
 }
+
+.home-page__error {
+  text-align: center;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+  font-size: 14px;
+  color: rgba(220, 38, 38, 0.9) !important;
+  margin: 20px 0 0;
+  padding: 0 24px;
+}

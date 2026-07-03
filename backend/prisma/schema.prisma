@@ -23,26 +23,38 @@ enum Category {
   INSPIRATION
 }
 
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  boards       Board[]
+  cards        Card[]
+}
+
 model Board {
-  id        String   @id @default(cuid())
-  title     String
-  category  Category
-  author    String?
-  imageUrl  String
-  createdAt DateTime @default(now())
-  cards     Card[]
+  id         String   @id @default(cuid())
+  title      String
+  category   Category
+  author     String?
+  imageUrl   String
+  createdAt  DateTime @default(now())
+  cards      Card[]
+  authorId   String?
+  authorUser User?    @relation(fields: [authorId], references: [id], onDelete: SetNull)
 }
 
 model Card {
-  id        String    @id @default(cuid())
-  title     String
-  message   String
-  gifUrl    String
-  author    String?
-  upvotes   Int       @default(0)
-  isPinned  Boolean   @default(false)
-  pinnedAt  DateTime?
-  createdAt DateTime  @default(now())
-  boardId   String
-  board     Board     @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  id         String    @id @default(cuid())
+  title      String
+  message    String
+  gifUrl     String
+  author     String?
+  upvotes    Int       @default(0)
+  createdAt  DateTime  @default(now())
+  boardId    String
+  board      Board     @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  authorId   String?
+  authorUser User?     @relation(fields: [authorId], references: [id], onDelete: SetNull)
 }

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Modal } from '../Modal'
 import { heroImages } from '../../data/heroImages'
+import { createBoard } from '../../lib/api'
 import '../_shared/formFields.css'
 import './CreateBoardModal.css'
 
@@ -15,6 +16,7 @@ export function CreateBoardModal({ isOpen, onClose, onCreate }) {
   const [category, setCategory] = useState('CELEBRATION')
   const [imageUrl, setImageUrl] = useState('')
   const [author, setAuthor] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState(null)
 
   const reset = () => {
@@ -22,15 +24,17 @@ export function CreateBoardModal({ isOpen, onClose, onCreate }) {
     setCategory('CELEBRATION')
     setImageUrl('')
     setAuthor('')
+    setIsSubmitting(false)
     setError(null)
   }
 
   const handleClose = () => {
+    if (isSubmitting) return
     reset()
     onClose()
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     if (!title.trim()) {
       setError('Title is required.')
@@ -40,19 +44,25 @@ export function CreateBoardModal({ isOpen, onClose, onCreate }) {
       setError('Image URL is required.')
       return
     }
-    onCreate({
-      id: `board-${Date.now()}`,
-      title: title.trim(),
-      category,
-      imageUrl: imageUrl.trim(),
-      author: author.trim() || null,
-      createdAt: new Date().toISOString(),
-    })
-    reset()
-    onClose()
+    setError(null)
+    setIsSubmitting(true)
+    try {
+      const created = await createBoard({
+        title: title.trim(),
+        category,
+        imageUrl: imageUrl.trim(),
+        author: author.trim() || null,
+      })
+      onCreate(created)
+      reset()
+      onClose()
+    } catch (err) {
+      setError(err.message)
+      setIsSubmitting(false)
+    }
   }
 
-  const canSubmit = title.trim() && imageUrl.trim()
+  const canSubmit = title.trim() && imageUrl.trim() && !isSubmitting
 
   return (
     <Modal isOpen={isOpen} onClose={handleClose} title="create a new board">
@@ -137,7 +147,7 @@ export function CreateBoardModal({ isOpen, onClose, onCreate }) {
             className="form__btn form__btn--submit"
             disabled={!canSubmit}
           >
-            create board
+            {isSubmitting ? 'creating…' : 'create board'}
           </button>
         </div>
       </form>

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { GiphySearch } from '../GiphySearch'
 import { Modal } from '../Modal'
+import { createCard } from '../../lib/api'
 import '../_shared/formFields.css'
 
 export function CreateCardModal({ isOpen, boardId, onClose, onCreate }) {
@@ -8,6 +9,7 @@ export function CreateCardModal({ isOpen, boardId, onClose, onCreate }) {
   const [message, setMessage] = useState('')
   const [author, setAuthor] = useState('')
   const [selectedGifUrl, setSelectedGifUrl] = useState(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState(null)
 
   const reset = () => {
@@ -15,15 +17,17 @@ export function CreateCardModal({ isOpen, boardId, onClose, onCreate }) {
     setMessage('')
     setAuthor('')
     setSelectedGifUrl(null)
+    setIsSubmitting(false)
     setError(null)
   }
 
   const handleClose = () => {
+    if (isSubmitting) return
     reset()
     onClose()
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     if (!title.trim()) {
       setError('Title is required.')
@@ -37,21 +41,25 @@ export function CreateCardModal({ isOpen, boardId, onClose, onCreate }) {
       setError('Please pick a gif.')
       return
     }
-    onCreate({
-      id: `${boardId}-card-${Date.now()}`,
-      boardId,
-      title: title.trim(),
-      message: message.trim(),
-      gifUrl: selectedGifUrl,
-      author: author.trim() || null,
-      upvotes: 0,
-      createdAt: new Date().toISOString(),
-    })
-    reset()
-    onClose()
+    setError(null)
+    setIsSubmitting(true)
+    try {
+      const created = await createCard(boardId, {
+        title: title.trim(),
+        message: message.trim(),
+        gifUrl: selectedGifUrl,
+        author: author.trim() || null,
+      })
+      onCreate(created)
+      reset()
+      onClose()
+    } catch (err) {
+      setError(err.message)
+      setIsSubmitting(false)
+    }
   }
 
-  const canSubmit = title.trim() && message.trim() && selectedGifUrl
+  const canSubmit = title.trim() && message.trim() && selectedGifUrl && !isSubmitting
 
   return (
     <Modal isOpen={isOpen} onClose={handleClose} title="add a new card">
@@ -129,7 +137,7 @@ export function CreateCardModal({ isOpen, boardId, onClose, onCreate }) {
             className="form__btn form__btn--submit"
             disabled={!canSubmit}
           >
-            post card
+            {isSubmitting ? 'posting…' : 'post card'}
           </button>
         </div>
       </form>

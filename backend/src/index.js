@@ -3,6 +3,7 @@ import express from "express";
 import cors from "cors";
 import morgan from "morgan";
 import { errorHandler } from "./middleware/errorHandler.js";
+import authRouter from "./routes/auth.js";
 import boardsRouter from "./routes/boards.js";
 import cardsRouter from "./routes/cards.js";
 
@@ -18,6 +19,7 @@ app.get("/health", (_req, res) => {
   res.json({ status: "ok" });
 });
 
+app.use("/api/auth", authRouter);
 app.use("/api/boards", boardsRouter);
 app.use("/api/boards/:boardId/cards", cardsRouter);
 app.use("/api/cards", cardsRouter);
